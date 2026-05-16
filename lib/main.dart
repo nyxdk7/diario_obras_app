@@ -271,7 +271,9 @@ class _HomePageState extends State<HomePage> {
   final authService = AuthService();
 
   bool carregando = true;
+  bool usandoDadosLocais = false;
   String? erro;
+  String? ultimaSincronizacao;
   List<dynamic> diarios = [];
 
   @override
@@ -287,6 +289,8 @@ class _HomePageState extends State<HomePage> {
     });
 
     try {
+      ultimaSincronizacao = await authService.buscarUltimaSincronizacao();
+
       final locais = await authService.listarDiariosLocais(limite: 50);
 
       final diariosLocais = <Map<String, dynamic>>[];
@@ -306,6 +310,7 @@ class _HomePageState extends State<HomePage> {
       if (diariosLocais.isNotEmpty && mounted) {
         setState(() {
           diarios = diariosLocais;
+          usandoDadosLocais = true;
           carregando = false;
         });
       }
@@ -329,6 +334,8 @@ class _HomePageState extends State<HomePage> {
 
         setState(() {
           diarios = listaApi;
+          usandoDadosLocais = false;
+          ultimaSincronizacao = DateTime.now().toIso8601String();
           carregando = false;
           erro = null;
         });
@@ -349,6 +356,7 @@ class _HomePageState extends State<HomePage> {
                 ? data['erro'].toString()
                 : 'Sem conexão. Nenhum diário local encontrado.'
             : null;
+        usandoDadosLocais = diarios.isNotEmpty;
         carregando = false;
       });
     } catch (_) {
@@ -356,6 +364,7 @@ class _HomePageState extends State<HomePage> {
         erro = diarios.isEmpty
             ? 'Erro inesperado ao carregar diários.'
             : null;
+        usandoDadosLocais = diarios.isNotEmpty;
         carregando = false;
       });
     }
@@ -377,6 +386,25 @@ class _HomePageState extends State<HomePage> {
     if (valor == null) return padrao;
     final str = valor.toString().trim();
     return str.isEmpty ? padrao : str;
+  }
+
+  String formatarUltimaSincronizacao() {
+    if (ultimaSincronizacao == null || ultimaSincronizacao!.trim().isEmpty) {
+      return 'Última sincronização: não informada';
+    }
+
+    try {
+      final data = DateTime.parse(ultimaSincronizacao!);
+      final dia = data.day.toString().padLeft(2, '0');
+      final mes = data.month.toString().padLeft(2, '0');
+      final ano = data.year.toString();
+      final hora = data.hour.toString().padLeft(2, '0');
+      final minuto = data.minute.toString().padLeft(2, '0');
+
+      return 'Última sincronização: $dia/$mes/$ano às $hora:$min';
+    } catch (_) {
+      return 'Última sincronização: $ultimaSincronizacao';
+    }
   }
 
   String? primeiroServico(Map<String, dynamic> diario) {
@@ -444,6 +472,43 @@ class _HomePageState extends State<HomePage> {
                       'Últimos diários: ${diarios.length}',
                       style: const TextStyle(
                         fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: usandoDadosLocais
+                            ? const Color(0xFFFFFBEB)
+                            : const Color(0xFFECFDF5),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: usandoDadosLocais
+                              ? const Color(0xFFF59E0B)
+                              : const Color(0xFF10B981),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            usandoDadosLocais
+                                ? 'Modo offline: usando dados salvos no dispositivo'
+                                : 'Online: dados sincronizados com o servidor',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            formatarUltimaSincronizacao(),
+                            style: const TextStyle(
+                              color: Color(0xFF64748B),
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
