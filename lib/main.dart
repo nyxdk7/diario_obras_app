@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
@@ -21,7 +23,58 @@ class DiarioObrasApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const LoginPage(),
+      home: const AppStartPage(),
+    );
+  }
+}
+
+class AppStartPage extends StatefulWidget {
+  const AppStartPage({super.key});
+
+  @override
+  State<AppStartPage> createState() => _AppStartPageState();
+}
+
+class _AppStartPageState extends State<AppStartPage> {
+  final authService = AuthService();
+
+  @override
+  void initState() {
+    super.initState();
+    verificarSessao();
+  }
+
+  Future<void> verificarSessao() async {
+    final sessao = await authService.getSessaoLocal();
+
+    if (!mounted) return;
+
+    if (sessao == null) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => const LoginPage(),
+        ),
+      );
+      return;
+    }
+
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => HomePage(
+          nomeUsuario: sessao['nomeUsuario'] ?? 'Engenheiro',
+          nomeObra: sessao['nomeObra'] ?? 'Obra vinculada',
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      backgroundColor: Color(0xFFF8FAFC),
+      body: Center(
+        child: CircularProgressIndicator(),
+      ),
     );
   }
 }
@@ -234,26 +287,56 @@ class _HomePageState extends State<HomePage> {
     });
 
     try {
+      final locais = await authService.listarDiariosLocais(limite: 50);
+
+      final diariosLocais = <Map<String, dynamic>>[];
+
+      for (final item in locais) {
+        try {
+          final decoded = jsonDecode(item.jsonCompleto);
+
+          if (decoded is Map) {
+            diariosLocais.add(Map<String, dynamic>.from(decoded));
+          }
+        } catch (_) {
+          // Ignora registros locais antigos que não estejam em JSON válido.
+        }
+      }
+
+      if (diariosLocais.isNotEmpty && mounted) {
+        setState(() {
+          diarios = diariosLocais;
+          carregando = false;
+        });
+      }
+
       final resposta = await authService.sync(limite: 10);
 
       if (!mounted) return;
 
       if (resposta == null) {
         setState(() {
-          erro = 'Token não encontrado. Faça login novamente.';
+          erro = diarios.isEmpty
+              ? 'Token não encontrado. Faça login novamente.'
+              : null;
           carregando = false;
         });
         return;
       }
 
       if (resposta['ok'] == true) {
+        final listaApi = resposta['diarios'] as List<dynamic>? ?? [];
+
         setState(() {
-          diarios = resposta['diarios'] as List<dynamic>? ?? [];
+          diarios = listaApi;
           carregando = false;
+          erro = null;
         });
       } else {
         setState(() {
-          erro = resposta['erro']?.toString() ?? 'Erro ao sincronizar dados.';
+          erro = diarios.isEmpty
+              ? resposta['erro']?.toString() ?? 'Erro ao sincronizar dados.'
+              : null;
           carregando = false;
         });
       }
@@ -261,14 +344,18 @@ class _HomePageState extends State<HomePage> {
       final data = e.response?.data;
 
       setState(() {
-        erro = data is Map && data['erro'] != null
-            ? data['erro'].toString()
-            : 'Não foi possível sincronizar os diários.';
+        erro = diarios.isEmpty
+            ? data is Map && data['erro'] != null
+                ? data['erro'].toString()
+                : 'Sem conexão. Nenhum diário local encontrado.'
+            : null;
         carregando = false;
       });
     } catch (_) {
       setState(() {
-        erro = 'Erro inesperado ao carregar diários.';
+        erro = diarios.isEmpty
+            ? 'Erro inesperado ao carregar diários.'
+            : null;
         carregando = false;
       });
     }
