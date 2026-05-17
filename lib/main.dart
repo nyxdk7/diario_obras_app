@@ -269,17 +269,57 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final authService = AuthService();
+  final buscaController = TextEditingController();
 
   bool carregando = true;
   bool usandoDadosLocais = false;
   String? erro;
   String? ultimaSincronizacao;
+  String termoBusca = '';
   List<dynamic> diarios = [];
 
   @override
   void initState() {
     super.initState();
     carregarDiarios();
+  }
+
+  @override
+  void dispose() {
+    buscaController.dispose();
+    super.dispose();
+  }
+
+  List<Map<String, dynamic>> get diariosFiltrados {
+    final termo = termoBusca.trim().toLowerCase();
+
+    final lista = diarios
+        .whereType<Map>()
+        .map((item) => Map<String, dynamic>.from(item))
+        .toList();
+
+    if (termo.isEmpty) {
+      return lista;
+    }
+
+    return lista.where((diario) {
+      final conteudo = [
+        diario['id'],
+        diario['data_diario'],
+        diario['data_registro'],
+        diario['equipe'],
+        diario['status_aprovacao'],
+        diario['descricao'],
+        diario['ocorrencias'],
+        diario['comentarios_ocorrencias'],
+        diario['clima'],
+        diario['km_inicial'],
+        diario['km_final'],
+        primeiroServico(diario),
+      ].map((valor) => valor?.toString().toLowerCase() ?? '').join(' ');
+
+      return conteudo.contains(termo);
+    }).toList();
   }
 
   Future<void> carregarDiarios() async {
@@ -382,6 +422,14 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  void limparBusca() {
+    buscaController.clear();
+
+    setState(() {
+      termoBusca = '';
+    });
+  }
+
   String texto(dynamic valor, {String padrao = '-'}) {
     if (valor == null) return padrao;
     final str = valor.toString().trim();
@@ -424,6 +472,8 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final filtrados = diariosFiltrados;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -469,7 +519,9 @@ class _HomePageState extends State<HomePage> {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Últimos diários: ${diarios.length}',
+                      termoBusca.trim().isEmpty
+                          ? 'Últimos diários: ${diarios.length}'
+                          : 'Resultados encontrados: ${filtrados.length} de ${diarios.length}',
                       style: const TextStyle(
                         fontWeight: FontWeight.w700,
                       ),
@@ -515,6 +567,31 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
             ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: buscaController,
+              decoration: InputDecoration(
+                labelText: 'Buscar diário',
+                hintText: 'Equipe, serviço, status, data, ocorrência...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: termoBusca.isEmpty
+                    ? null
+                    : IconButton(
+                        onPressed: limparBusca,
+                        icon: const Icon(Icons.close),
+                      ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                filled: true,
+                fillColor: Colors.white,
+              ),
+              onChanged: (valor) {
+                setState(() {
+                  termoBusca = valor;
+                });
+              },
+            ),
             const SizedBox(height: 16),
             if (carregando)
               const Center(
@@ -556,10 +633,34 @@ class _HomePageState extends State<HomePage> {
                   child: Text('Nenhum diário encontrado para esta obra.'),
                 ),
               )
+            else if (filtrados.isEmpty)
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(18),
+                  child: Column(
+                    children: [
+                      const Icon(
+                        Icons.search_off,
+                        size: 42,
+                        color: Color(0xFF64748B),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Nenhum diário encontrado para "$termoBusca".',
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        onPressed: limparBusca,
+                        icon: const Icon(Icons.close),
+                        label: const Text('Limpar busca'),
+                      ),
+                    ],
+                  ),
+                ),
+              )
             else
-              ...diarios.map((diario) {
-                final item = diario as Map<String, dynamic>;
-
+              ...filtrados.map((item) {
                 return Card(
                   margin: const EdgeInsets.only(bottom: 12),
                   child: ListTile(
