@@ -839,6 +839,125 @@ class DiarioDetalhePage extends StatelessWidget {
     return [];
   }
 
+  String normalizarStatus(dynamic valor) {
+    final status = valor?.toString().trim().toUpperCase() ?? '';
+
+    if (status.contains('APROV')) {
+      return 'APROVADO';
+    }
+
+    if (status.contains('DEVOL')) {
+      return 'DEVOLVIDO';
+    }
+
+    if (status.contains('PEND')) {
+      return 'PENDENTE';
+    }
+
+    return status.isEmpty ? 'NÃO INFORMADO' : status;
+  }
+
+  Color corStatus(String status) {
+    switch (status) {
+      case 'APROVADO':
+        return const Color(0xFF10B981);
+      case 'DEVOLVIDO':
+        return const Color(0xFFF97316);
+      case 'PENDENTE':
+        return const Color(0xFFF59E0B);
+      default:
+        return const Color(0xFF64748B);
+    }
+  }
+
+  IconData iconeStatus(String status) {
+    switch (status) {
+      case 'APROVADO':
+        return Icons.check_circle_outline;
+      case 'DEVOLVIDO':
+        return Icons.assignment_return_outlined;
+      case 'PENDENTE':
+        return Icons.hourglass_empty;
+      default:
+        return Icons.info_outline;
+    }
+  }
+
+  Widget infoChip({
+    required IconData icon,
+    required String label,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 8,
+      ),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: const Color(0xFFE2E8F0),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 17,
+            color: const Color(0xFF475569),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF334155),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget statusPill(String status) {
+    final color = corStatus(status);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 8,
+      ),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.14),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: color.withOpacity(0.45),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            iconeStatus(status),
+            size: 18,
+            color: Colors.white,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            status,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+              fontSize: 13,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final obra = diario['obra'] is Map ? diario['obra'] as Map : {};
@@ -848,6 +967,8 @@ class DiarioDetalhePage extends StatelessWidget {
     final servicos = lista('servicos_executados_lista');
     final fotos = lista('fotos');
 
+    final status = normalizarStatus(diario['status_aprovacao']);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -856,62 +977,112 @@ class DiarioDetalhePage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(18),
         children: [
-          Card(
-            elevation: 2,
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    texto(diario['data_diario'], padrao: 'Sem data'),
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    texto(obra['nome']),
-                    style: const TextStyle(
-                      color: Color(0xFF64748B),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      Chip(
-                        avatar: const Icon(Icons.verified_outlined, size: 18),
-                        label: Text(texto(diario['status_aprovacao'])),
-                      ),
-                      Chip(
-                        avatar: const Icon(Icons.cloud_outlined, size: 18),
-                        label: Text(texto(diario['clima'])),
-                      ),
-                      Chip(
-                        avatar: const Icon(Icons.groups_outlined, size: 18),
-                        label: Text('Equipe: ${texto(diario['equipe'])}'),
-                      ),
-                    ],
-                  ),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [
+                  Color(0xFF0F172A),
+                  Color(0xFF1D4ED8),
                 ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x1F000000),
+                  blurRadius: 18,
+                  offset: Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.14),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.22),
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.description_outlined,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Registro diário',
+                            style: TextStyle(
+                              color: Color(0xFFBFDBFE),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            texto(diario['data_diario'], padrao: 'Sem data'),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  texto(obra['nome'], padrao: 'Obra não informada'),
+                  style: const TextStyle(
+                    color: Color(0xFFE0F2FE),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    statusPill(status),
+                    infoChip(
+                      icon: Icons.cloud_outlined,
+                      label: texto(diario['clima'], padrao: 'Clima não informado'),
+                    ),
+                    infoChip(
+                      icon: Icons.groups_outlined,
+                      label: 'Equipe: ${texto(diario['equipe'])}',
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           _SecaoCard(
-            titulo: 'Serviço principal',
-            icone: Icons.construction,
+            titulo: 'Resumo do diário',
+            icone: Icons.dashboard_outlined,
             children: [
-              _LinhaInfo('Serviço', primeiroServico()),
+              _LinhaInfo('Serviço principal', primeiroServico()),
               _LinhaInfo('KM inicial', texto(diario['km_inicial'])),
               _LinhaInfo('KM final', texto(diario['km_final'])),
-              _LinhaInfo(
-                'Distância',
-                texto(diario['distancia_total_formatada']),
-              ),
+              _LinhaInfo('Distância', texto(diario['distancia_total_formatada'])),
               _LinhaInfo('Condição', texto(diario['condicao_operacao'])),
             ],
           ),
