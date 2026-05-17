@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
+import 'core/api/api_client.dart';
 import 'features/auth/auth_service.dart';
 
 void main() {
@@ -352,7 +353,9 @@ class _HomePageState extends State<HomePage> {
           if (decoded is Map) {
             diariosLocais.add(Map<String, dynamic>.from(decoded));
           }
-        } catch (_) {}
+        } catch (_) {
+          // Ignora registros locais antigos que não estejam em JSON válido.
+        }
       }
 
       if (diariosLocais.isNotEmpty && mounted) {
@@ -369,8 +372,9 @@ class _HomePageState extends State<HomePage> {
 
       if (resposta == null) {
         setState(() {
-          erro =
-              diarios.isEmpty ? 'Token não encontrado. Faça login novamente.' : null;
+          erro = diarios.isEmpty
+              ? 'Token não encontrado. Faça login novamente.'
+              : null;
           carregando = false;
         });
         return;
@@ -1333,46 +1337,398 @@ class DiarioDetalhePage extends StatelessWidget {
             titulo: 'Fotos',
             icone: Icons.photo_library_outlined,
             children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEEF2FF),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(
-                    color: const Color(0xFFC7D2FE),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.photo_library_outlined,
-                      color: Color(0xFF3730A3),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        '${fotos.length} foto(s) vinculada(s) a este diário.',
-                        style: const TextStyle(
-                          color: Color(0xFF3730A3),
-                          fontWeight: FontWeight.w800,
-                        ),
+              InkWell(
+                borderRadius: BorderRadius.circular(18),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => GaleriaFotosPage(
+                        fotos: fotos,
+                        diarioId: texto(diario['id']),
+                        dataDiario: texto(diario['data_diario']),
                       ),
                     ),
-                    const Icon(
-                      Icons.chevron_right,
-                      color: Color(0xFF3730A3),
+                  );
+                },
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEEF2FF),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: const Color(0xFFC7D2FE),
                     ),
-                  ],
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.photo_library_outlined,
+                        color: Color(0xFF3730A3),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          '${fotos.length} foto(s) vinculada(s) a este diário.',
+                          style: const TextStyle(
+                            color: Color(0xFF3730A3),
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                      const Icon(
+                        Icons.chevron_right,
+                        color: Color(0xFF3730A3),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 8),
               const Text(
-                'A galeria com visualização/download das fotos será adicionada na próxima etapa.',
+                'Toque para abrir a galeria. Download/cache offline das imagens será adicionado depois.',
                 style: TextStyle(color: Color(0xFF64748B)),
               ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class GaleriaFotosPage extends StatelessWidget {
+  final List<dynamic> fotos;
+  final String diarioId;
+  final String dataDiario;
+
+  const GaleriaFotosPage({
+    super.key,
+    required this.fotos,
+    required this.diarioId,
+    required this.dataDiario,
+  });
+
+  Map<String, dynamic> normalizarFoto(dynamic item) {
+    if (item is Map) {
+      return Map<String, dynamic>.from(item);
+    }
+
+    return {
+      'arquivo': item?.toString() ?? '',
+    };
+  }
+
+  String caminhoFoto(Map<String, dynamic> foto) {
+    final possiveis = [
+      foto['url'],
+      foto['caminho'],
+      foto['arquivo'],
+      foto['path'],
+      foto['filename'],
+      foto['nome_arquivo'],
+    ];
+
+    for (final item in possiveis) {
+      final valor = item?.toString().trim() ?? '';
+      if (valor.isNotEmpty) {
+        return valor;
+      }
+    }
+
+    return '';
+  }
+
+  String urlFoto(Map<String, dynamic> foto) {
+    final caminho = caminhoFoto(foto);
+
+    if (caminho.isEmpty) {
+      return '';
+    }
+
+    if (caminho.startsWith('http://') || caminho.startsWith('https://')) {
+      return caminho;
+    }
+
+    if (caminho.startsWith('/')) {
+      return '${ApiClient.baseUrl}$caminho';
+    }
+
+    return '${ApiClient.baseUrl}/$caminho';
+  }
+
+  String tituloFoto(Map<String, dynamic> foto, int index) {
+    final caminho = caminhoFoto(foto);
+
+    if (caminho.isNotEmpty) {
+      return caminho.split('/').last;
+    }
+
+    return 'Foto ${index + 1}';
+  }
+
+  String descricaoFoto(Map<String, dynamic> foto) {
+    final possiveis = [
+      foto['descricao'],
+      foto['observacao'],
+      foto['legenda'],
+      foto['caminho'],
+      foto['url'],
+      foto['arquivo'],
+    ];
+
+    for (final item in possiveis) {
+      final valor = item?.toString().trim() ?? '';
+      if (valor.isNotEmpty) {
+        return valor;
+      }
+    }
+
+    return 'Sem informações adicionais.';
+  }
+
+  Widget imagemFoto(String url) {
+    if (url.isEmpty) {
+      return Container(
+        height: 190,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: const Color(0xFFE2E8F0),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: const Center(
+          child: Icon(
+            Icons.broken_image_outlined,
+            size: 44,
+            color: Color(0xFF64748B),
+          ),
+        ),
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: Image.network(
+        url,
+        height: 190,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) {
+            return child;
+          }
+
+          return Container(
+            height: 190,
+            width: double.infinity,
+            color: const Color(0xFFE2E8F0),
+            child: const Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            height: 190,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF7ED),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: const Color(0xFFFED7AA),
+              ),
+            ),
+            child: const Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.image_not_supported_outlined,
+                    size: 42,
+                    color: Color(0xFFEA580C),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Não foi possível carregar a imagem',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Color(0xFF9A3412),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final fotosNormalizadas = fotos.map(normalizarFoto).toList();
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        title: const Text('Galeria de Fotos'),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(18),
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [
+                  Color(0xFF1E1B4B),
+                  Color(0xFF4338CA),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x1F000000),
+                  blurRadius: 18,
+                  offset: Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.photo_library_outlined,
+                  color: Colors.white,
+                  size: 42,
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  '$dataDiario • Diário #$diarioId',
+                  style: const TextStyle(
+                    color: Color(0xFFC7D2FE),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '${fotosNormalizadas.length} foto(s) vinculada(s)',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'As imagens são carregadas da API enquanto houver conexão. O cache offline das fotos entra na próxima fase.',
+                  style: TextStyle(
+                    color: Color(0xFFE0E7FF),
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          if (fotosNormalizadas.isEmpty)
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  children: const [
+                    Icon(
+                      Icons.image_not_supported_outlined,
+                      size: 46,
+                      color: Color(0xFF64748B),
+                    ),
+                    SizedBox(height: 12),
+                    Text(
+                      'Nenhuma foto vinculada a este diário.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            ...fotosNormalizadas.asMap().entries.map((entry) {
+              final index = entry.key;
+              final foto = entry.value;
+              final url = urlFoto(foto);
+
+              return Card(
+                margin: const EdgeInsets.only(bottom: 16),
+                elevation: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      imagemFoto(url),
+                      const SizedBox(height: 12),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          CircleAvatar(
+                            backgroundColor: const Color(0xFFEEF2FF),
+                            child: Text(
+                              '${index + 1}',
+                              style: const TextStyle(
+                                color: Color(0xFF3730A3),
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  tituloFoto(foto, index),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  descricaoFoto(foto),
+                                  maxLines: 3,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Color(0xFF64748B),
+                                  ),
+                                ),
+                                if (url.isNotEmpty) ...[
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    url,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Color(0xFF94A3B8),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
         ],
       ),
     );
