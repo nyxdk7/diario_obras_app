@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 
 import 'core/api/api_client.dart';
 import 'features/auth/auth_service.dart';
@@ -1397,7 +1399,7 @@ class DiarioDetalhePage extends StatelessWidget {
   }
 }
 
-class GaleriaFotosPage extends StatelessWidget {
+class GaleriaFotosPage extends StatefulWidget {
   final List<dynamic> fotos;
   final String diarioId;
   final String dataDiario;
@@ -1409,6 +1411,70 @@ class GaleriaFotosPage extends StatelessWidget {
     required this.dataDiario,
   });
 
+  @override
+  State<GaleriaFotosPage> createState() => _GaleriaFotosPageState();
+}
+
+class _GaleriaFotosPageState extends State<GaleriaFotosPage> {
+  static const int fotosPorPagina = 40;
+
+  final ScrollController scrollController = ScrollController();
+
+  int paginaAtual = 0;
+  bool baixandoFotos = false;
+  int fotosBaixadas = 0;
+  int totalFotosDownload = 0;
+  String? mensagemDownload;
+
+  List<Map<String, dynamic>> get fotosNormalizadas {
+    return widget.fotos.map(normalizarFoto).toList();
+  }
+
+  int get totalPaginas {
+    if (fotosNormalizadas.isEmpty) {
+      return 1;
+    }
+
+    return (fotosNormalizadas.length / fotosPorPagina).ceil();
+  }
+
+  int get indiceInicialPagina {
+    return paginaAtual * fotosPorPagina;
+  }
+
+  int get indiceFinalPagina {
+    final fim = indiceInicialPagina + fotosPorPagina;
+    return fim > fotosNormalizadas.length ? fotosNormalizadas.length : fim;
+  }
+
+  List<Map<String, dynamic>> get fotosDaPagina {
+    if (fotosNormalizadas.isEmpty) {
+      return [];
+    }
+
+    return fotosNormalizadas.sublist(indiceInicialPagina, indiceFinalPagina);
+  }
+
+  @override
+  void dispose() {
+    scrollController.dispose();
+    super.dispose();
+  }
+
+  void voltarParaTopoDaGaleria() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!scrollController.hasClients) {
+        return;
+      }
+
+      scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOut,
+      );
+    });
+  }
+
   Map<String, dynamic> normalizarFoto(dynamic item) {
     if (item is Map) {
       return Map<String, dynamic>.from(item);
@@ -1417,6 +1483,623 @@ class GaleriaFotosPage extends StatelessWidget {
     return {
       'arquivo': item?.toString() ?? '',
     };
+  }
+
+  String caminhoFoto(Map<String, dynamic> foto) {
+    final possiveis = [
+      foto['url'],
+      foto['caminho'],
+      foto['arquivo'],
+      foto['path'],
+      foto['filename'],
+      foto['nome_arquivo'],
+    ];
+
+    for (final item in possiveis) {
+      final valor = item?.toString().trim() ?? '';
+      if (valor.isNotEmpty) {
+        return valor;
+      }
+    }
+
+    return '';
+  }
+
+  String urlFoto(Map<String, dynamic> foto) {
+    final caminho = caminhoFoto(foto);
+
+    if (caminho.isEmpty) {
+      return '';
+    }
+
+    if (caminho.startsWith('http://') || caminho.startsWith('https://')) {
+      return caminho;
+    }
+
+    if (caminho.startsWith('/')) {
+      return '${ApiClient.baseUrl}$caminho';
+    }
+
+    return '${ApiClient.baseUrl}/$caminho';
+  }
+
+  String tituloFoto(Map<String, dynamic> foto, int indexGlobal) {
+    final caminho = caminhoFoto(foto);
+
+    if (caminho.isNotEmpty) {
+      return caminho.split('/').last;
+    }
+
+    return 'Foto ${indexGlobal + 1}';
+  }
+
+  String descricaoFoto(Map<String, dynamic> foto) {
+    final possiveis = [
+      foto['descricao'],
+      foto['observacao'],
+      foto['legenda'],
+      foto['caminho'],
+      foto['url'],
+      foto['arquivo'],
+    ];
+
+    for (final item in possiveis) {
+      final valor = item?.toString().trim() ?? '';
+      if (valor.isNotEmpty) {
+        return valor;
+      }
+    }
+
+    return 'Sem informações adicionais.';
+  }
+
+  void irParaPaginaAnterior() {
+    if (paginaAtual <= 0) {
+      return;
+    }
+
+    setState(() {
+      paginaAtual--;
+    });
+
+    voltarParaTopoDaGaleria();
+  }
+
+  void irParaProximaPagina() {
+    if (paginaAtual >= totalPaginas - 1) {
+      return;
+    }
+
+    setState(() {
+      paginaAtual++;
+    });
+
+    voltarParaTopoDaGaleria();
+  }
+
+  void abrirFoto(int indexGlobal) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => FotoTelaCheiaPage(
+          fotos: fotosNormalizadas,
+          indiceInicial: indexGlobal,
+        ),
+      ),
+    );
+  }
+
+  Future<void> baixarTodasFotosOffline() async {
+    final fotos = fotosNormalizadas;
+
+    if (fotos.isEmpty || baixandoFotos) {
+      return;
+    }
+
+    setState(() {
+      baixandoFotos = true;
+      fotosBaixadas = 0;
+      totalFotosDownload = fotos.length;
+      mensagemDownload = null;
+    });
+
+    int baixadasComSucesso = 0;
+
+    for (final foto in fotos) {
+      final url = urlFoto(foto);
+
+      if (url.isNotEmpty) {
+        final arquivo = await FotoCacheService.obterOuBaixar(url);
+
+        if (arquivo != null) {
+          baixadasComSucesso++;
+        }
+      }
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        fotosBaixadas++;
+      });
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      baixandoFotos = false;
+      mensagemDownload =
+          '$baixadasComSucesso de ${fotos.length} foto(s) salvas para uso offline.';
+    });
+  }
+
+  Future<bool> fotoSalvaOffline(String url) async {
+    if (url.trim().isEmpty) {
+      return false;
+    }
+
+    final arquivo = await FotoCacheService.arquivoLocal(url);
+    return await arquivo.exists() && await arquivo.length() > 0;
+  }
+
+  Widget badgeStatusOffline(String url) {
+    return FutureBuilder<bool>(
+      future: fotoSalvaOffline(url),
+      builder: (context, snapshot) {
+        final salva = snapshot.data == true;
+
+        return Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 10,
+            vertical: 6,
+          ),
+          decoration: BoxDecoration(
+            color: salva
+                ? const Color(0xFF166534).withOpacity(0.92)
+                : const Color(0xFF92400E).withOpacity(0.92),
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                salva ? Icons.offline_pin : Icons.cloud_download_outlined,
+                color: Colors.white,
+                size: 16,
+              ),
+              const SizedBox(width: 5),
+              Text(
+                salva ? 'Salva offline' : 'Não baixada',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget cardDownloadOffline(int totalFotos) {
+    final progresso = totalFotosDownload == 0
+        ? 0.0
+        : fotosBaixadas / totalFotosDownload;
+
+    return Card(
+      elevation: 1,
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(
+                  Icons.offline_pin_outlined,
+                  color: Color(0xFF1D4ED8),
+                ),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Fotos offline',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Baixe as fotos deste diário enquanto estiver online para consultar depois sem internet.',
+              style: TextStyle(
+                color: Color(0xFF64748B),
+                height: 1.3,
+              ),
+            ),
+            const SizedBox(height: 12),
+            if (baixandoFotos) ...[
+              LinearProgressIndicator(value: progresso),
+              const SizedBox(height: 8),
+              Text(
+                'Baixando $fotosBaixadas de $totalFotosDownload foto(s)...',
+                style: const TextStyle(
+                  color: Color(0xFF475569),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ] else ...[
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: totalFotos == 0 ? null : baixarTodasFotosOffline,
+                  icon: const Icon(Icons.download_for_offline_outlined),
+                  label: Text(
+                    totalFotos == 0
+                        ? 'Nenhuma foto para baixar'
+                        : 'Baixar $totalFotos foto(s) para offline',
+                  ),
+                ),
+              ),
+              if (mensagemDownload != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  mensagemDownload!,
+                  style: const TextStyle(
+                    color: Color(0xFF166534),
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget imagemFoto(String url, int indexGlobal) {
+    if (url.isEmpty) {
+      return Container(
+        height: 190,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: const Color(0xFFE2E8F0),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: const Center(
+          child: Icon(
+            Icons.broken_image_outlined,
+            size: 44,
+            color: Color(0xFF64748B),
+          ),
+        ),
+      );
+    }
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(18),
+      onTap: () => abrirFoto(indexGlobal),
+      child: Stack(
+        children: [
+          FotoCacheImage(
+            url: url,
+            height: 190,
+            width: double.infinity,
+            fit: BoxFit.cover,
+            borderRadius: BorderRadius.circular(18),
+          ),
+          Positioned(
+            left: 10,
+            top: 10,
+            child: badgeStatusOffline(url),
+          ),
+          Positioned(
+            right: 10,
+            bottom: 10,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 10,
+                vertical: 6,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.58),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.fullscreen,
+                    color: Colors.white,
+                    size: 17,
+                  ),
+                  SizedBox(width: 4),
+                  Text(
+                    'Ampliar',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final fotos = fotosNormalizadas;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        title: const Text('Galeria de Fotos'),
+      ),
+      body: ListView(
+        controller: scrollController,
+        padding: const EdgeInsets.all(18),
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [
+                  Color(0xFF1E1B4B),
+                  Color(0xFF4338CA),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x1F000000),
+                  blurRadius: 18,
+                  offset: Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.photo_library_outlined,
+                  color: Colors.white,
+                  size: 42,
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  '${widget.dataDiario} • Diário #${widget.diarioId}',
+                  style: const TextStyle(
+                    color: Color(0xFFC7D2FE),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '${fotos.length} foto(s) vinculada(s)',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  fotos.isEmpty
+                      ? 'Nenhuma foto foi vinculada a este diário.'
+                      : 'Mostrando ${indiceInicialPagina + 1} a $indiceFinalPagina de ${fotos.length}. Toque em uma foto para ampliar.',
+                  style: const TextStyle(
+                    color: Color(0xFFE0E7FF),
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          cardDownloadOffline(fotos.length),
+          const SizedBox(height: 14),
+          if (fotos.isEmpty)
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  children: const [
+                    Icon(
+                      Icons.image_not_supported_outlined,
+                      size: 46,
+                      color: Color(0xFF64748B),
+                    ),
+                    SizedBox(height: 12),
+                    Text(
+                      'Nenhuma foto vinculada a este diário.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            ...fotosDaPagina.asMap().entries.map((entry) {
+              final indexNaPagina = entry.key;
+              final indexGlobal = indiceInicialPagina + indexNaPagina;
+              final foto = entry.value;
+              final url = urlFoto(foto);
+
+              return Card(
+                margin: const EdgeInsets.only(bottom: 16),
+                elevation: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      imagemFoto(url, indexGlobal),
+                      const SizedBox(height: 12),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          CircleAvatar(
+                            backgroundColor: const Color(0xFFEEF2FF),
+                            child: Text(
+                              '${indexGlobal + 1}',
+                              style: const TextStyle(
+                                color: Color(0xFF3730A3),
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  tituloFoto(foto, indexGlobal),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  descricaoFoto(foto),
+                                  maxLines: 3,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Color(0xFF64748B),
+                                  ),
+                                ),
+                                if (url.isNotEmpty) ...[
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    url,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Color(0xFF94A3B8),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  FutureBuilder<bool>(
+                                    future: fotoSalvaOffline(url),
+                                    builder: (context, snapshot) {
+                                      final salva = snapshot.data == true;
+
+                                      return Text(
+                                        salva
+                                            ? 'Disponível sem internet'
+                                            : 'Ainda precisa baixar para offline',
+                                        style: TextStyle(
+                                          color: salva
+                                              ? const Color(0xFF166534)
+                                              : const Color(0xFF92400E),
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 12,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          if (fotos.length > fotosPorPagina) ...[
+            const SizedBox(height: 4),
+            Card(
+              elevation: 1,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 8,
+                ),
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: paginaAtual == 0 ? null : irParaPaginaAnterior,
+                      icon: const Icon(Icons.chevron_left),
+                      tooltip: 'Página anterior',
+                    ),
+                    Expanded(
+                      child: Text(
+                        'Página ${paginaAtual + 1} de $totalPaginas • ${fotosPorPagina} fotos por página',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: paginaAtual >= totalPaginas - 1
+                          ? null
+                          : irParaProximaPagina,
+                      icon: const Icon(Icons.chevron_right),
+                      tooltip: 'Próxima página',
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class FotoTelaCheiaPage extends StatefulWidget {
+  final List<Map<String, dynamic>> fotos;
+  final int indiceInicial;
+
+  const FotoTelaCheiaPage({
+    super.key,
+    required this.fotos,
+    required this.indiceInicial,
+  });
+
+  @override
+  State<FotoTelaCheiaPage> createState() => _FotoTelaCheiaPageState();
+}
+
+class _FotoTelaCheiaPageState extends State<FotoTelaCheiaPage> {
+  late final PageController pageController;
+  late int indiceAtual;
+
+  @override
+  void initState() {
+    super.initState();
+    indiceAtual = widget.indiceInicial;
+    pageController = PageController(initialPage: widget.indiceInicial);
+  }
+
+  @override
+  void dispose() {
+    pageController.dispose();
+    super.dispose();
   }
 
   String caminhoFoto(Map<String, dynamic> foto) {
@@ -1467,270 +2150,366 @@ class GaleriaFotosPage extends StatelessWidget {
     return 'Foto ${index + 1}';
   }
 
-  String descricaoFoto(Map<String, dynamic> foto) {
-    final possiveis = [
-      foto['descricao'],
-      foto['observacao'],
-      foto['legenda'],
-      foto['caminho'],
-      foto['url'],
-      foto['arquivo'],
-    ];
-
-    for (final item in possiveis) {
-      final valor = item?.toString().trim() ?? '';
-      if (valor.isNotEmpty) {
-        return valor;
-      }
+  void irParaFotoAnterior() {
+    if (indiceAtual <= 0) {
+      return;
     }
 
-    return 'Sem informações adicionais.';
+    pageController.previousPage(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOut,
+    );
   }
 
-  Widget imagemFoto(String url) {
+  void irParaProximaFoto() {
+    if (indiceAtual >= widget.fotos.length - 1) {
+      return;
+    }
+
+    pageController.nextPage(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOut,
+    );
+  }
+
+  Widget imagemAmpliada(String url) {
     if (url.isEmpty) {
-      return Container(
-        height: 190,
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: const Color(0xFFE2E8F0),
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: const Center(
-          child: Icon(
-            Icons.broken_image_outlined,
-            size: 44,
-            color: Color(0xFF64748B),
-          ),
+      return const Center(
+        child: Icon(
+          Icons.broken_image_outlined,
+          color: Colors.white,
+          size: 64,
         ),
       );
     }
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(18),
-      child: Image.network(
-        url,
-        height: 190,
-        width: double.infinity,
-        fit: BoxFit.cover,
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) {
-            return child;
-          }
-
-          return Container(
-            height: 190,
-            width: double.infinity,
-            color: const Color(0xFFE2E8F0),
-            child: const Center(
-              child: CircularProgressIndicator(),
-            ),
-          );
-        },
-        errorBuilder: (context, error, stackTrace) {
-          return Container(
-            height: 190,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF7ED),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: const Color(0xFFFED7AA),
-              ),
-            ),
-            child: const Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.image_not_supported_outlined,
-                    size: 42,
-                    color: Color(0xFFEA580C),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'Não foi possível carregar a imagem',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Color(0xFF9A3412),
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
+    return Center(
+      child: InteractiveViewer(
+        minScale: 1,
+        maxScale: 5,
+        child: FotoCacheImage(
+          url: url,
+          fit: BoxFit.contain,
+          backgroundColor: Colors.black,
+          loadingColor: Colors.white,
+          errorDarkMode: true,
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final fotosNormalizadas = fotos.map(normalizarFoto).toList();
+    final fotoAtual = widget.fotos[indiceAtual];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text('Galeria de Fotos'),
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        title: Text(
+          'Foto ${indiceAtual + 1} de ${widget.fotos.length}',
+          style: const TextStyle(
+            color: Colors.white,
+          ),
+        ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(18),
+      body: Stack(
         children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [
-                  Color(0xFF1E1B4B),
-                  Color(0xFF4338CA),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+          PageView.builder(
+            controller: pageController,
+            itemCount: widget.fotos.length,
+            onPageChanged: (index) {
+              setState(() {
+                indiceAtual = index;
+              });
+            },
+            itemBuilder: (context, index) {
+              final foto = widget.fotos[index];
+              return Padding(
+                padding: const EdgeInsets.all(8),
+                child: imagemAmpliada(urlFoto(foto)),
+              );
+            },
+          ),
+          Positioned(
+            left: 12,
+            top: 0,
+            bottom: 0,
+            child: Center(
+              child: IconButton.filled(
+                onPressed: indiceAtual <= 0 ? null : irParaFotoAnterior,
+                icon: const Icon(Icons.chevron_left),
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.white.withOpacity(0.18),
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: Colors.white.withOpacity(0.06),
+                  disabledForegroundColor: Colors.white30,
+                ),
               ),
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x1F000000),
-                  blurRadius: 18,
-                  offset: Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(
-                  Icons.photo_library_outlined,
-                  color: Colors.white,
-                  size: 42,
-                ),
-                const SizedBox(height: 14),
-                Text(
-                  '$dataDiario • Diário #$diarioId',
-                  style: const TextStyle(
-                    color: Color(0xFFC7D2FE),
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  '${fotosNormalizadas.length} foto(s) vinculada(s)',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'As imagens são carregadas da API enquanto houver conexão. O cache offline das fotos entra na próxima fase.',
-                  style: TextStyle(
-                    color: Color(0xFFE0E7FF),
-                    height: 1.35,
-                  ),
-                ),
-              ],
             ),
           ),
-          const SizedBox(height: 16),
-          if (fotosNormalizadas.isEmpty)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(18),
-                child: Column(
-                  children: const [
-                    Icon(
-                      Icons.image_not_supported_outlined,
-                      size: 46,
-                      color: Color(0xFF64748B),
-                    ),
-                    SizedBox(height: 12),
-                    Text(
-                      'Nenhuma foto vinculada a este diário.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
+          Positioned(
+            right: 12,
+            top: 0,
+            bottom: 0,
+            child: Center(
+              child: IconButton.filled(
+                onPressed:
+                    indiceAtual >= widget.fotos.length - 1 ? null : irParaProximaFoto,
+                icon: const Icon(Icons.chevron_right),
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.white.withOpacity(0.18),
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: Colors.white.withOpacity(0.06),
+                  disabledForegroundColor: Colors.white30,
                 ),
               ),
-            )
-          else
-            ...fotosNormalizadas.asMap().entries.map((entry) {
-              final index = entry.key;
-              final foto = entry.value;
-              final url = urlFoto(foto);
-
-              return Card(
-                margin: const EdgeInsets.only(bottom: 16),
-                elevation: 2,
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      imagemFoto(url),
-                      const SizedBox(height: 12),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          CircleAvatar(
-                            backgroundColor: const Color(0xFFEEF2FF),
-                            child: Text(
-                              '${index + 1}',
-                              style: const TextStyle(
-                                color: Color(0xFF3730A3),
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  tituloFoto(foto, index),
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  descricaoFoto(foto),
-                                  maxLines: 3,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: Color(0xFF64748B),
-                                  ),
-                                ),
-                                if (url.isNotEmpty) ...[
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    url,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      color: Color(0xFF94A3B8),
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+            ),
+          ),
+          Positioned(
+            left: 16,
+            right: 16,
+            bottom: 18,
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.62),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.12),
                 ),
-              );
-            }),
+              ),
+              child: Text(
+                tituloFoto(fotoAtual, indiceAtual),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
+    );
+  }
+}
+
+
+class FotoCacheService {
+  FotoCacheService._();
+
+  static final Dio _dio = Dio();
+
+  static Future<Directory> _cacheDir() async {
+    final baseDir = await getApplicationDocumentsDirectory();
+    final dir = Directory('${baseDir.path}/foto_cache_diarios');
+
+    if (!await dir.exists()) {
+      await dir.create(recursive: true);
+    }
+
+    return dir;
+  }
+
+  static String _extensaoDaUrl(String url) {
+    try {
+      final uri = Uri.parse(url);
+      final last = uri.pathSegments.isEmpty ? '' : uri.pathSegments.last;
+      final dotIndex = last.lastIndexOf('.');
+
+      if (dotIndex >= 0 && dotIndex < last.length - 1) {
+        final ext = last.substring(dotIndex).toLowerCase();
+
+        if (ext.length <= 6) {
+          return ext;
+        }
+      }
+    } catch (_) {}
+
+    return '.jpg';
+  }
+
+  static String _nomeArquivo(String url) {
+    final hash = base64Url.encode(utf8.encode(url)).replaceAll('=', '');
+    return '$hash${_extensaoDaUrl(url)}';
+  }
+
+  static Future<File> arquivoLocal(String url) async {
+    final dir = await _cacheDir();
+    return File('${dir.path}/${_nomeArquivo(url)}');
+  }
+
+  static Future<File?> obterOuBaixar(String url) async {
+    if (url.trim().isEmpty) {
+      return null;
+    }
+
+    final file = await arquivoLocal(url);
+
+    if (await file.exists() && await file.length() > 0) {
+      return file;
+    }
+
+    try {
+      await _dio.download(
+        url,
+        file.path,
+        options: Options(
+          responseType: ResponseType.bytes,
+          followRedirects: true,
+          receiveTimeout: const Duration(seconds: 60),
+        ),
+      );
+
+      if (await file.exists() && await file.length() > 0) {
+        return file;
+      }
+    } catch (_) {
+      if (await file.exists()) {
+        try {
+          await file.delete();
+        } catch (_) {}
+      }
+    }
+
+    return null;
+  }
+}
+
+class FotoCacheImage extends StatefulWidget {
+  final String url;
+  final double? height;
+  final double? width;
+  final BoxFit fit;
+  final BorderRadius? borderRadius;
+  final Color backgroundColor;
+  final Color loadingColor;
+  final bool errorDarkMode;
+
+  const FotoCacheImage({
+    super.key,
+    required this.url,
+    this.height,
+    this.width,
+    this.fit = BoxFit.cover,
+    this.borderRadius,
+    this.backgroundColor = const Color(0xFFE2E8F0),
+    this.loadingColor = const Color(0xFF1D4ED8),
+    this.errorDarkMode = false,
+  });
+
+  @override
+  State<FotoCacheImage> createState() => _FotoCacheImageState();
+}
+
+class _FotoCacheImageState extends State<FotoCacheImage> {
+  late Future<File?> arquivoFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    arquivoFuture = FotoCacheService.obterOuBaixar(widget.url);
+  }
+
+  @override
+  void didUpdateWidget(covariant FotoCacheImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.url != widget.url) {
+      arquivoFuture = FotoCacheService.obterOuBaixar(widget.url);
+    }
+  }
+
+  Widget _containerBase({required Widget child, Color? color}) {
+    final content = Container(
+      height: widget.height,
+      width: widget.width,
+      color: color ?? widget.backgroundColor,
+      child: Center(child: child),
+    );
+
+    if (widget.borderRadius == null) {
+      return content;
+    }
+
+    return ClipRRect(
+      borderRadius: widget.borderRadius!,
+      child: content,
+    );
+  }
+
+  Widget _erro() {
+    final iconColor = widget.errorDarkMode ? Colors.white : const Color(0xFFEA580C);
+    final textColor = widget.errorDarkMode ? Colors.white : const Color(0xFF9A3412);
+    final bgColor = widget.errorDarkMode ? Colors.black : const Color(0xFFFFF7ED);
+
+    return _containerBase(
+      color: bgColor,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.image_not_supported_outlined,
+            size: 42,
+            color: iconColor,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Imagem indisponível offline',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: textColor,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _loading() {
+    return _containerBase(
+      child: CircularProgressIndicator(
+        color: widget.loadingColor,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<File?>(
+      future: arquivoFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return _loading();
+        }
+
+        final file = snapshot.data;
+
+        if (file == null) {
+          return _erro();
+        }
+
+        final image = Image.file(
+          file,
+          height: widget.height,
+          width: widget.width,
+          fit: widget.fit,
+        );
+
+        if (widget.borderRadius == null) {
+          return image;
+        }
+
+        return ClipRRect(
+          borderRadius: widget.borderRadius!,
+          child: image,
+        );
+      },
     );
   }
 }
