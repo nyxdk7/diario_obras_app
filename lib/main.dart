@@ -276,6 +276,7 @@ class _HomePageState extends State<HomePage> {
   String? erro;
   String? ultimaSincronizacao;
   String termoBusca = '';
+  String filtroStatus = 'TODOS';
   List<dynamic> diarios = [];
 
   @override
@@ -298,11 +299,20 @@ class _HomePageState extends State<HomePage> {
         .map((item) => Map<String, dynamic>.from(item))
         .toList();
 
+    final filtradosPorStatus = lista.where((diario) {
+      if (filtroStatus == 'TODOS') {
+        return true;
+      }
+
+      final status = normalizarStatus(diario['status_aprovacao']);
+      return status == filtroStatus;
+    }).toList();
+
     if (termo.isEmpty) {
-      return lista;
+      return filtradosPorStatus;
     }
 
-    return lista.where((diario) {
+    return filtradosPorStatus.where((diario) {
       final conteudo = [
         diario['id'],
         diario['data_diario'],
@@ -430,6 +440,60 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  String normalizarStatus(dynamic valor) {
+    final status = valor?.toString().trim().toUpperCase() ?? '';
+
+    if (status.contains('APROV')) {
+      return 'APROVADO';
+    }
+
+    if (status.contains('DEVOL')) {
+      return 'DEVOLVIDO';
+    }
+
+    if (status.contains('PEND')) {
+      return 'PENDENTE';
+    }
+
+    return status;
+  }
+
+  String labelFiltroStatus(String status) {
+    switch (status) {
+      case 'TODOS':
+        return 'Todos';
+      case 'PENDENTE':
+        return 'Pendentes';
+      case 'APROVADO':
+        return 'Aprovados';
+      case 'DEVOLVIDO':
+        return 'Devolvidos';
+      default:
+        return status;
+    }
+  }
+
+  IconData iconeFiltroStatus(String status) {
+    switch (status) {
+      case 'TODOS':
+        return Icons.list_alt;
+      case 'PENDENTE':
+        return Icons.hourglass_empty;
+      case 'APROVADO':
+        return Icons.check_circle_outline;
+      case 'DEVOLVIDO':
+        return Icons.assignment_return_outlined;
+      default:
+        return Icons.filter_list;
+    }
+  }
+
+  void selecionarFiltroStatus(String status) {
+    setState(() {
+      filtroStatus = status;
+    });
+  }
+
   String texto(dynamic valor, {String padrao = '-'}) {
     if (valor == null) return padrao;
     final str = valor.toString().trim();
@@ -519,7 +583,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      termoBusca.trim().isEmpty
+                      termoBusca.trim().isEmpty && filtroStatus == 'TODOS'
                           ? 'Últimos diários: ${diarios.length}'
                           : 'Resultados encontrados: ${filtrados.length} de ${diarios.length}',
                       style: const TextStyle(
@@ -592,6 +656,33 @@ class _HomePageState extends State<HomePage> {
                 });
               },
             ),
+            const SizedBox(height: 12),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  'TODOS',
+                  'PENDENTE',
+                  'APROVADO',
+                  'DEVOLVIDO',
+                ].map((status) {
+                  final selecionado = filtroStatus == status;
+
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ChoiceChip(
+                      selected: selecionado,
+                      label: Text(labelFiltroStatus(status)),
+                      avatar: Icon(
+                        iconeFiltroStatus(status),
+                        size: 18,
+                      ),
+                      onSelected: (_) => selecionarFiltroStatus(status),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
             const SizedBox(height: 16),
             if (carregando)
               const Center(
@@ -646,14 +737,19 @@ class _HomePageState extends State<HomePage> {
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'Nenhum diário encontrado para "$termoBusca".',
+                        termoBusca.trim().isEmpty
+                            ? 'Nenhum diário encontrado para o filtro "${labelFiltroStatus(filtroStatus)}".'
+                            : 'Nenhum diário encontrado para "$termoBusca" no filtro "${labelFiltroStatus(filtroStatus)}".',
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 12),
                       OutlinedButton.icon(
-                        onPressed: limparBusca,
+                        onPressed: () {
+                          limparBusca();
+                          selecionarFiltroStatus('TODOS');
+                        },
                         icon: const Icon(Icons.close),
-                        label: const Text('Limpar busca'),
+                        label: const Text('Limpar filtros'),
                       ),
                     ],
                   ),
