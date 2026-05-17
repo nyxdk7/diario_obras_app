@@ -352,9 +352,7 @@ class _HomePageState extends State<HomePage> {
           if (decoded is Map) {
             diariosLocais.add(Map<String, dynamic>.from(decoded));
           }
-        } catch (_) {
-          // Ignora registros locais antigos que não estejam em JSON válido.
-        }
+        } catch (_) {}
       }
 
       if (diariosLocais.isNotEmpty && mounted) {
@@ -371,9 +369,8 @@ class _HomePageState extends State<HomePage> {
 
       if (resposta == null) {
         setState(() {
-          erro = diarios.isEmpty
-              ? 'Token não encontrado. Faça login novamente.'
-              : null;
+          erro =
+              diarios.isEmpty ? 'Token não encontrado. Faça login novamente.' : null;
           carregando = false;
         });
         return;
@@ -411,9 +408,7 @@ class _HomePageState extends State<HomePage> {
       });
     } catch (_) {
       setState(() {
-        erro = diarios.isEmpty
-            ? 'Erro inesperado ao carregar diários.'
-            : null;
+        erro = diarios.isEmpty ? 'Erro inesperado ao carregar diários.' : null;
         usandoDadosLocais = diarios.isNotEmpty;
         carregando = false;
       });
@@ -443,17 +438,9 @@ class _HomePageState extends State<HomePage> {
   String normalizarStatus(dynamic valor) {
     final status = valor?.toString().trim().toUpperCase() ?? '';
 
-    if (status.contains('APROV')) {
-      return 'APROVADO';
-    }
-
-    if (status.contains('DEVOL')) {
-      return 'DEVOLVIDO';
-    }
-
-    if (status.contains('PEND')) {
-      return 'PENDENTE';
-    }
+    if (status.contains('APROV')) return 'APROVADO';
+    if (status.contains('DEVOL')) return 'DEVOLVIDO';
+    if (status.contains('PEND')) return 'PENDENTE';
 
     return status;
   }
@@ -586,9 +573,7 @@ class _HomePageState extends State<HomePage> {
                       termoBusca.trim().isEmpty && filtroStatus == 'TODOS'
                           ? 'Últimos diários: ${diarios.length}'
                           : 'Resultados encontrados: ${filtrados.length} de ${diarios.length}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 10),
                     Container(
@@ -612,9 +597,7 @@ class _HomePageState extends State<HomePage> {
                             usandoDadosLocais
                                 ? 'Modo offline: usando dados salvos no dispositivo'
                                 : 'Online: dados sincronizados com o servidor',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w800,
-                            ),
+                            style: const TextStyle(fontWeight: FontWeight.w800),
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -765,9 +748,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                     title: Text(
                       texto(item['data_diario'], padrao: 'Sem data'),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                      ),
+                      style: const TextStyle(fontWeight: FontWeight.w800),
                     ),
                     subtitle: Padding(
                       padding: const EdgeInsets.only(top: 6),
@@ -842,17 +823,9 @@ class DiarioDetalhePage extends StatelessWidget {
   String normalizarStatus(dynamic valor) {
     final status = valor?.toString().trim().toUpperCase() ?? '';
 
-    if (status.contains('APROV')) {
-      return 'APROVADO';
-    }
-
-    if (status.contains('DEVOL')) {
-      return 'DEVOLVIDO';
-    }
-
-    if (status.contains('PEND')) {
-      return 'PENDENTE';
-    }
+    if (status.contains('APROV')) return 'APROVADO';
+    if (status.contains('DEVOL')) return 'DEVOLVIDO';
+    if (status.contains('PEND')) return 'PENDENTE';
 
     return status.isEmpty ? 'NÃO INFORMADO' : status;
   }
@@ -881,6 +854,43 @@ class DiarioDetalhePage extends StatelessWidget {
       default:
         return Icons.info_outline;
     }
+  }
+
+  Widget statusPill(String status) {
+    final color = corStatus(status);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 8,
+      ),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.14),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: color.withOpacity(0.45),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            iconeStatus(status),
+            size: 18,
+            color: Colors.white,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            status,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+              fontSize: 13,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget infoChip({
@@ -921,36 +931,120 @@ class DiarioDetalhePage extends StatelessWidget {
     );
   }
 
-  Widget statusPill(String status) {
-    final color = corStatus(status);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 8,
+  Widget contadorCard({
+    required IconData icon,
+    required String titulo,
+    required String valor,
+  }) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: const Color(0xFFE2E8F0),
+          ),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x0D000000),
+              blurRadius: 12,
+              offset: Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              color: const Color(0xFF1D4ED8),
+              size: 24,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              valor,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              titulo,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF64748B),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget miniCard({
+    required IconData icon,
+    required String titulo,
+    required List<String> linhas,
+    Color accentColor = const Color(0xFF1D4ED8),
+  }) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.14),
-        borderRadius: BorderRadius.circular(999),
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: color.withOpacity(0.45),
+          color: const Color(0xFFE2E8F0),
         ),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            iconeStatus(status),
-            size: 18,
-            color: Colors.white,
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: accentColor.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(
+              icon,
+              color: accentColor,
+              size: 22,
+            ),
           ),
-          const SizedBox(width: 6),
-          Text(
-            status,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w800,
-              fontSize: 13,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  titulo,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                ...linhas
+                    .where((linha) => linha.trim().isNotEmpty)
+                    .map(
+                      (linha) => Padding(
+                        padding: const EdgeInsets.only(top: 3),
+                        child: Text(
+                          linha,
+                          style: const TextStyle(
+                            color: Color(0xFF475569),
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ),
+              ],
             ),
           ),
         ],
@@ -1063,7 +1157,10 @@ class DiarioDetalhePage extends StatelessWidget {
                     statusPill(status),
                     infoChip(
                       icon: Icons.cloud_outlined,
-                      label: texto(diario['clima'], padrao: 'Clima não informado'),
+                      label: texto(
+                        diario['clima'],
+                        padrao: 'Clima não informado',
+                      ),
                     ),
                     infoChip(
                       icon: Icons.groups_outlined,
@@ -1075,6 +1172,28 @@ class DiarioDetalhePage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
+          Row(
+            children: [
+              contadorCard(
+                icon: Icons.build_circle_outlined,
+                titulo: 'Serviços',
+                valor: servicos.length.toString(),
+              ),
+              const SizedBox(width: 10),
+              contadorCard(
+                icon: Icons.precision_manufacturing_outlined,
+                titulo: 'Equipamentos',
+                valor: equipamentos.length.toString(),
+              ),
+              const SizedBox(width: 10),
+              contadorCard(
+                icon: Icons.inventory_2_outlined,
+                titulo: 'Materiais',
+                valor: materiais.length.toString(),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
           _SecaoCard(
             titulo: 'Resumo do diário',
             icone: Icons.dashboard_outlined,
@@ -1082,7 +1201,10 @@ class DiarioDetalhePage extends StatelessWidget {
               _LinhaInfo('Serviço principal', primeiroServico()),
               _LinhaInfo('KM inicial', texto(diario['km_inicial'])),
               _LinhaInfo('KM final', texto(diario['km_final'])),
-              _LinhaInfo('Distância', texto(diario['distancia_total_formatada'])),
+              _LinhaInfo(
+                'Distância',
+                texto(diario['distancia_total_formatada']),
+              ),
               _LinhaInfo('Condição', texto(diario['condicao_operacao'])),
             ],
           ),
@@ -1096,7 +1218,8 @@ class DiarioDetalhePage extends StatelessWidget {
                   ]
                 : servicos.map((item) {
                     final servico = item is Map ? item : {};
-                    return _MiniCard(
+                    return miniCard(
+                      icon: Icons.construction,
                       titulo: texto(
                         servico['tipo_servico'] ?? servico['tipo'],
                         padrao: 'Serviço',
@@ -1105,7 +1228,7 @@ class DiarioDetalhePage extends StatelessWidget {
                         'KM: ${texto(servico['km_inicial'])} até ${texto(servico['km_final'])}',
                         'Lado: ${texto(servico['lado'])}',
                         'Distância: ${texto(servico['distancia_formatada'])}',
-                        'Obs: ${texto(servico['observacao'] ?? servico['observacoes'])}',
+                        'Observação: ${texto(servico['observacao'] ?? servico['observacoes'])}',
                       ],
                     );
                   }).toList(),
@@ -1120,9 +1243,13 @@ class DiarioDetalhePage extends StatelessWidget {
                   ]
                 : maoObra.map((item) {
                     final mao = item is Map ? item : {};
-                    return _LinhaInfo(
-                      texto(mao['funcao'], padrao: 'Função'),
-                      texto(mao['quantidade']),
+                    return miniCard(
+                      icon: Icons.person_outline,
+                      titulo: texto(mao['funcao'], padrao: 'Função'),
+                      linhas: [
+                        'Quantidade: ${texto(mao['quantidade'])}',
+                      ],
+                      accentColor: const Color(0xFF0F766E),
                     );
                   }).toList(),
           ),
@@ -1136,13 +1263,14 @@ class DiarioDetalhePage extends StatelessWidget {
                   ]
                 : equipamentos.map((item) {
                     final eq = item is Map ? item : {};
-                    return _MiniCard(
+                    return miniCard(
+                      icon: Icons.precision_manufacturing_outlined,
                       titulo: texto(eq['equipamento'], padrao: 'Equipamento'),
                       linhas: [
                         'Código/Placa: ${texto(eq['codigo_placa'])}',
                         'Horímetro/KM: ${texto(eq['horimetro_quilometragem'])}',
-                        'Quantidade: ${texto(eq['quantidade'])}',
                       ],
+                      accentColor: const Color(0xFF7C3AED),
                     );
                   }).toList(),
           ),
@@ -1156,15 +1284,17 @@ class DiarioDetalhePage extends StatelessWidget {
                   ]
                 : materiais.map((item) {
                     final mat = item is Map ? item : {};
-                    return _MiniCard(
+                    return miniCard(
+                      icon: Icons.inventory_2_outlined,
                       titulo: texto(mat['material'], padrao: 'Material'),
                       linhas: [
                         'Quantidade: ${texto(mat['quantidade'])} ${texto(mat['unidade'], padrao: '')}',
                         'Placa: ${texto(mat['placa'])}',
                         'Ticket: ${texto(mat['ticket'])}',
                         'Hora chegada: ${texto(mat['hora_chegada'])}',
-                        'Obs: ${texto(mat['observacao'])}',
+                        'Observação: ${texto(mat['observacao'])}',
                       ],
+                      accentColor: const Color(0xFFEA580C),
                     );
                   }).toList(),
           ),
@@ -1173,12 +1303,27 @@ class DiarioDetalhePage extends StatelessWidget {
             titulo: 'Ocorrências e comentários',
             icone: Icons.notes_outlined,
             children: [
-              Text(
-                texto(
-                  diario['comentarios_ocorrencias'] ??
-                      diario['ocorrencias'] ??
-                      diario['descricao'],
-                  padrao: 'Sem ocorrências informadas.',
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFFBEB),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: const Color(0xFFFDE68A),
+                  ),
+                ),
+                child: Text(
+                  texto(
+                    diario['comentarios_ocorrencias'] ??
+                        diario['ocorrencias'] ??
+                        diario['descricao'],
+                    padrao: 'Sem ocorrências informadas.',
+                  ),
+                  style: const TextStyle(
+                    color: Color(0xFF713F12),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
@@ -1188,10 +1333,42 @@ class DiarioDetalhePage extends StatelessWidget {
             titulo: 'Fotos',
             icone: Icons.photo_library_outlined,
             children: [
-              Text('${fotos.length} foto(s) vinculada(s) a este diário.'),
-              const SizedBox(height: 6),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEEF2FF),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: const Color(0xFFC7D2FE),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.photo_library_outlined,
+                      color: Color(0xFF3730A3),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        '${fotos.length} foto(s) vinculada(s) a este diário.',
+                        style: const TextStyle(
+                          color: Color(0xFF3730A3),
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    const Icon(
+                      Icons.chevron_right,
+                      color: Color(0xFF3730A3),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
               const Text(
-                'A visualização/download das fotos será adicionada na próxima etapa.',
+                'A galeria com visualização/download das fotos será adicionada na próxima etapa.',
                 style: TextStyle(color: Color(0xFF64748B)),
               ),
             ],
@@ -1274,55 +1451,6 @@ class _LinhaInfo extends StatelessWidget {
               textAlign: TextAlign.right,
               style: const TextStyle(
                 fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MiniCard extends StatelessWidget {
-  final String titulo;
-  final List<String> linhas;
-
-  const _MiniCard({
-    required this.titulo,
-    required this.linhas,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFE2E8F0),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            titulo,
-            style: const TextStyle(
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 6),
-          ...linhas.map(
-            (linha) => Padding(
-              padding: const EdgeInsets.only(top: 3),
-              child: Text(
-                linha,
-                style: const TextStyle(
-                  color: Color(0xFF475569),
-                ),
               ),
             ),
           ),
