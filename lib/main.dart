@@ -401,7 +401,7 @@ class _HomePageState extends State<HomePage> {
       final hora = data.hour.toString().padLeft(2, '0');
       final minuto = data.minute.toString().padLeft(2, '0');
 
-      return 'Última sincronização: $dia/$mes/$ano às $hora:$min';
+      return 'Última sincronização: $dia/$mes/$ano às $hora:$minuto';
     } catch (_) {
       return 'Última sincronização: $ultimaSincronizacao';
     }
