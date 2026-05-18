@@ -10,6 +10,146 @@ import 'core/api/api_client.dart';
 import 'core/database/app_database.dart';
 import 'features/auth/auth_service.dart';
 
+
+class AppUI {
+  AppUI._();
+
+  static const Color bg = Color(0xFFF4F7FB);
+  static const Color surface = Colors.white;
+  static const Color navy = Color(0xFF0F172A);
+  static const Color blue = Color(0xFF1D4ED8);
+  static const Color blue2 = Color(0xFF2563EB);
+  static const Color cyan = Color(0xFF0EA5E9);
+  static const Color green = Color(0xFF10B981);
+  static const Color amber = Color(0xFFF59E0B);
+  static const Color orange = Color(0xFFF97316);
+  static const Color red = Color(0xFFDC2626);
+  static const Color purple = Color(0xFF7C3AED);
+  static const Color text = Color(0xFF0F172A);
+  static const Color muted = Color(0xFF64748B);
+  static const Color border = Color(0xFFE2E8F0);
+
+  static const LinearGradient primaryGradient = LinearGradient(
+    colors: [Color(0xFF0F172A), Color(0xFF1D4ED8), Color(0xFF0EA5E9)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const LinearGradient softGradient = LinearGradient(
+    colors: [Color(0xFFF8FAFC), Color(0xFFEFF6FF)],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+  );
+
+  static List<BoxShadow> softShadow = const [
+    BoxShadow(
+      color: Color(0x140F172A),
+      blurRadius: 24,
+      offset: Offset(0, 12),
+    ),
+  ];
+
+  static ThemeData get theme {
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: blue,
+      brightness: Brightness.light,
+      primary: blue,
+      secondary: cyan,
+      surface: surface,
+      background: bg,
+    );
+
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: colorScheme,
+      scaffoldBackgroundColor: bg,
+      fontFamily: 'Roboto',
+      appBarTheme: const AppBarTheme(
+        elevation: 0,
+        centerTitle: false,
+        backgroundColor: bg,
+        foregroundColor: text,
+        titleTextStyle: TextStyle(
+          color: text,
+          fontSize: 20,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+      cardTheme: CardThemeData(
+        color: surface,
+        elevation: 0,
+        margin: EdgeInsets.zero,
+        shadowColor: const Color(0x1A0F172A),
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: const BorderSide(color: border),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: surface,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: const BorderSide(color: border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: const BorderSide(color: border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: const BorderSide(color: blue, width: 1.5),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          minimumSize: const Size(0, 50),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          textStyle: const TextStyle(
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size(0, 50),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          side: const BorderSide(color: border),
+          textStyle: const TextStyle(
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: Colors.white,
+        selectedColor: blue,
+        disabledColor: const Color(0xFFE2E8F0),
+        surfaceTintColor: Colors.transparent,
+        checkmarkColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(999),
+        ),
+        side: const BorderSide(color: Color(0xFFCBD5E1)),
+        labelStyle: const TextStyle(
+          fontWeight: FontWeight.w900,
+          color: text,
+        ),
+        secondaryLabelStyle: const TextStyle(
+          fontWeight: FontWeight.w900,
+          color: Colors.white,
+        ),
+        iconTheme: const IconThemeData(color: blue, size: 18),
+      ),
+    );
+  }
+}
+
 void main() {
   runApp(const DiarioObrasApp());
 }
@@ -20,14 +160,9 @@ class DiarioObrasApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Diário de Obras',
+      title: 'Dash Sistem',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF1D4ED8),
-        ),
-        useMaterial3: true,
-      ),
+      theme: AppUI.theme,
       home: const AppStartPage(),
     );
   }
@@ -50,27 +185,43 @@ class _AppStartPageState extends State<AppStartPage> {
   }
 
   Future<void> verificarSessao() async {
-    final sessao = await authService.getSessaoLocal();
+    try {
+      final sessao = await authService
+          .getSessaoLocal()
+          .timeout(const Duration(seconds: 6));
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    if (sessao == null) {
+      if (sessao == null) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => const LoginPage(),
+          ),
+        );
+        return;
+      }
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => HomePage(
+            nomeUsuario: sessao['nomeUsuario'] ?? 'Engenheiro',
+            nomeObra: sessao['nomeObra'] ?? 'Obra vinculada',
+          ),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+
+      await authService.logout();
+
+      if (!mounted) return;
+
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => const LoginPage(),
         ),
       );
-      return;
     }
-
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => HomePage(
-          nomeUsuario: sessao['nomeUsuario'] ?? 'Engenheiro',
-          nomeObra: sessao['nomeObra'] ?? 'Obra vinculada',
-        ),
-      ),
-    );
   }
 
   @override
@@ -169,80 +320,148 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
-            child: Card(
-              elevation: 8,
-              shadowColor: Colors.black12,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(28),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF0F172A),
+              Color(0xFF1D4ED8),
+              Color(0xFFF4F7FB),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            stops: [0, 0.48, 0.48],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(22),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 430),
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(
-                      Icons.engineering,
-                      size: 56,
-                      color: Color(0xFF1D4ED8),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(22),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.10),
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(color: Colors.white.withOpacity(0.16)),
+                      ),
+                      child: const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          CircleAvatar(
+                            radius: 28,
+                            backgroundColor: Colors.white,
+                            child: Icon(
+                              Icons.engineering_outlined,
+                              color: AppUI.blue,
+                              size: 32,
+                            ),
+                          ),
+                          SizedBox(height: 18),
+                          Text(
+                            'Diário de Obras',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 30,
+                              fontWeight: FontWeight.w900,
+                              height: 1.05,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'Lançamentos, consulta offline e sincronização de campo em um só lugar.',
+                            style: TextStyle(
+                              color: Color(0xFFDDEBFF),
+                              fontSize: 15,
+                              height: 1.35,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(color: AppUI.border),
+                        boxShadow: AppUI.softShadow,
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text(
+                              'Acessar sistema',
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w900,
+                                color: AppUI.text,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            const Text(
+                              'Use o mesmo usuário do sistema web.',
+                              style: TextStyle(
+                                color: AppUI.muted,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 22),
+                            TextField(
+                              controller: usuarioController,
+                              decoration: const InputDecoration(
+                                labelText: 'Usuário',
+                                prefixIcon: Icon(Icons.person_outline),
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                            TextField(
+                              controller: senhaController,
+                              obscureText: true,
+                              decoration: const InputDecoration(
+                                labelText: 'Senha',
+                                prefixIcon: Icon(Icons.lock_outline),
+                              ),
+                              onSubmitted: (_) => fazerLogin(),
+                            ),
+                            const SizedBox(height: 22),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 54,
+                              child: FilledButton.icon(
+                                onPressed: carregando ? null : fazerLogin,
+                                icon: carregando
+                                    ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      )
+                                    : const Icon(Icons.login_rounded),
+                                label: Text(carregando ? 'Entrando...' : 'Entrar no app'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 16),
-                    const Text(
-                      'Diário de Obras',
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      'Consulta offline para engenheiros',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Color(0xFF64748B),
-                      ),
-                    ),
-                    const SizedBox(height: 28),
-                    TextField(
-                      controller: usuarioController,
-                      decoration: const InputDecoration(
-                        labelText: 'Usuário',
-                        prefixIcon: Icon(Icons.person_outline),
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    TextField(
-                      controller: senhaController,
-                      obscureText: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Senha',
-                        prefixIcon: Icon(Icons.lock_outline),
-                        border: OutlineInputBorder(),
-                      ),
-                      onSubmitted: (_) => fazerLogin(),
-                    ),
-                    const SizedBox(height: 22),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: FilledButton.icon(
-                        onPressed: carregando ? null : fazerLogin,
-                        icon: carregando
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(Icons.login),
-                        label: Text(carregando ? 'Entrando...' : 'Entrar'),
+                    const Center(
+                      child: Text(
+                        'Funciona online e mantém dados pendentes quando estiver sem conexão.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: AppUI.muted,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ],
@@ -255,7 +474,6 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
-
 class HomePage extends StatefulWidget {
   final String nomeUsuario;
   final String nomeObra;
@@ -276,6 +494,8 @@ class _HomePageState extends State<HomePage> {
 
   bool carregando = true;
   bool usandoDadosLocais = false;
+  bool enviandoPendentesAuto = false;
+  int totalPendentesLocais = 0;
   String? erro;
   String? ultimaSincronizacao;
   String termoBusca = '';
@@ -289,7 +509,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    carregarDiarios();
+    carregarDiarios(tentarEnviarPendentes: true);
   }
 
   @override
@@ -518,7 +738,76 @@ class _HomePageState extends State<HomePage> {
     return dataLimpa.isAfter(limite) || dataLimpa.isAtSameMomentAs(limite);
   }
 
-  Future<void> carregarDiarios() async {
+  Future<void> atualizarContadorPendentes() async {
+    final total = await authService.contarRascunhosDiarios();
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      totalPendentesLocais = total;
+    });
+  }
+
+  Future<int> enviarPendentesAutomaticamente({
+    bool mostrarMensagem = false,
+  }) async {
+    final pendentes = await authService.listarRascunhosDiarios();
+
+    if (!mounted) {
+      return 0;
+    }
+
+    setState(() {
+      totalPendentesLocais = pendentes.length;
+    });
+
+    if (pendentes.isEmpty) {
+      return 0;
+    }
+
+    setState(() {
+      enviandoPendentesAuto = true;
+    });
+
+    int enviados = 0;
+
+    for (final item in pendentes) {
+      try {
+        await authService.enviarRascunhoDiario(item);
+        enviados++;
+      } catch (_) {
+        // Se estiver sem internet/VPN/API, mantém pendente e continua o fluxo normal.
+        break;
+      }
+    }
+
+    final restantes = await authService.contarRascunhosDiarios();
+
+    if (!mounted) {
+      return enviados;
+    }
+
+    setState(() {
+      totalPendentesLocais = restantes;
+      enviandoPendentesAuto = false;
+    });
+
+    if (mostrarMensagem && enviados > 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$enviados diário(s) pendente(s) enviado(s).'),
+        ),
+      );
+    }
+
+    return enviados;
+  }
+
+  Future<void> carregarDiarios({
+    bool tentarEnviarPendentes = false,
+  }) async {
     setState(() {
       carregando = true;
       erro = null;
@@ -526,6 +815,11 @@ class _HomePageState extends State<HomePage> {
 
     try {
       ultimaSincronizacao = await authService.buscarUltimaSincronizacao();
+      await atualizarContadorPendentes();
+
+      if (tentarEnviarPendentes) {
+        await enviarPendentesAutomaticamente();
+      }
 
       final locais = await authService.listarDiariosLocais();
 
@@ -575,6 +869,8 @@ class _HomePageState extends State<HomePage> {
           carregando = false;
           erro = null;
         });
+
+        await atualizarContadorPendentes();
       } else {
         setState(() {
           erro = diarios.isEmpty
@@ -635,7 +931,7 @@ class _HomePageState extends State<HomePage> {
           limiteSincronizacao: limiteSincronizacao,
           urlsFotosSincronizadas: urlsFotosSincronizadas(),
           onAlterarLimiteSincronizacao: alterarLimiteSincronizacao,
-          onSincronizar: carregarDiarios,
+          onSincronizar: () => carregarDiarios(tentarEnviarPendentes: true),
           onSair: sair,
         ),
       ),
@@ -670,7 +966,7 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    setState(() {});
+    await carregarDiarios(tentarEnviarPendentes: true);
   }
 
   Future<void> abrirPendentesOffline() async {
@@ -684,7 +980,7 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    setState(() {});
+    await carregarDiarios(tentarEnviarPendentes: true);
   }
 
   void limparBusca() {
@@ -801,9 +1097,14 @@ class _HomePageState extends State<HomePage> {
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: filtroStatus == status
-                ? color.withOpacity(0.14)
-                : Colors.white,
+            gradient: filtroStatus == status
+                ? LinearGradient(
+                    colors: [color, color.withOpacity(0.82)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : null,
+            color: filtroStatus == status ? null : Colors.white,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
               color: filtroStatus == status
@@ -822,13 +1123,14 @@ class _HomePageState extends State<HomePage> {
             children: [
               Icon(
                 icon,
-                color: color,
+                color: filtroStatus == status ? Colors.white : color,
                 size: 22,
               ),
               const SizedBox(height: 7),
               Text(
                 valor.toString(),
-                style: const TextStyle(
+                style: TextStyle(
+                  color: filtroStatus == status ? Colors.white : AppUI.text,
                   fontSize: 18,
                   fontWeight: FontWeight.w900,
                 ),
@@ -837,8 +1139,10 @@ class _HomePageState extends State<HomePage> {
               Text(
                 titulo,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Color(0xFF64748B),
+                style: TextStyle(
+                  color: filtroStatus == status
+                      ? Colors.white.withOpacity(0.86)
+                      : AppUI.muted,
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
                 ),
@@ -854,6 +1158,70 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       filtroStatus = status;
     });
+  }
+
+  Widget filtroChipModerno({
+    required String label,
+    required IconData icon,
+    required bool selecionado,
+    required VoidCallback onTap,
+    Color color = AppUI.blue,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(999),
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          height: 42,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(
+            color: selecionado ? color : Colors.white,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: selecionado ? color : const Color(0xFFCBD5E1),
+              width: selecionado ? 1.4 : 1,
+            ),
+            boxShadow: selecionado
+                ? [
+                    BoxShadow(
+                      color: color.withOpacity(0.22),
+                      blurRadius: 14,
+                      offset: const Offset(0, 7),
+                    ),
+                  ]
+                : const [
+                    BoxShadow(
+                      color: Color(0x080F172A),
+                      blurRadius: 10,
+                      offset: Offset(0, 5),
+                    ),
+                  ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 18,
+                color: selecionado ? Colors.white : color,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  color: selecionado ? Colors.white : AppUI.text,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> alterarLimiteSincronizacao(int novoLimite) async {
@@ -968,6 +1336,249 @@ class _HomePageState extends State<HomePage> {
     return urls.toList();
   }
 
+
+  Widget homeHeroCard(int totalFiltrado) {
+    final online = !usandoDadosLocais;
+    final destaque = obraFoiSelecionada
+        ? (termoBusca.trim().isEmpty && filtroStatus == 'TODOS'
+            ? '${diariosDaObraSelecionada.length} diário(s) nesta obra'
+            : '$totalFiltrado resultado(s) encontrados')
+        : 'Selecione uma obra para começar';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        gradient: AppUI.primaryGradient,
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: AppUI.softShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 54,
+                height: 54,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.14),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: Colors.white.withOpacity(0.18)),
+                ),
+                child: const Icon(
+                  Icons.engineering_outlined,
+                  color: Colors.white,
+                  size: 30,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.nomeUsuario,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 23,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      widget.nomeObra,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFFDDEBFF),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Text(
+            destaque,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withOpacity(0.16)),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  online ? Icons.cloud_done_outlined : Icons.cloud_off_outlined,
+                  color: Colors.white,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        online
+                            ? 'Online e sincronizado'
+                            : 'Modo offline com dados locais',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        formatarUltimaSincronizacao(),
+                        style: const TextStyle(
+                          color: Color(0xFFDDEBFF),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget diarioCard(Map<String, dynamic> item) {
+    final status = normalizarStatus(item['status_aprovacao']);
+    final statusColor = corStatusCard(status);
+    final servico = texto(primeiroServico(item));
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppUI.border),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0A0F172A),
+            blurRadius: 16,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(24),
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => DiarioDetalhePage(diario: item),
+            ),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(15),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(17),
+                ),
+                child: Icon(Icons.description_outlined, color: statusColor),
+              ),
+              const SizedBox(width: 13),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            texto(item['data_diario'], padrao: 'Sem data'),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 16,
+                              color: AppUI.text,
+                            ),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: statusColor.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(color: statusColor.withOpacity(0.30)),
+                          ),
+                          child: Text(
+                            texto(item['status_aprovacao'], padrao: status),
+                            style: TextStyle(
+                              color: statusColor,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      servico,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppUI.text,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Equipe: ${texto(item['equipe'])}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppUI.muted,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      nomeObraDoDiario(item),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppUI.muted,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              const Icon(Icons.chevron_right, color: AppUI.muted),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final filtrados = diariosFiltrados;
@@ -976,18 +1587,20 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('Diário de Obras'),
+        title: const Text('Dash Sistem'),
         actions: [
-          IconButton(
+          IconButton.filledTonal(
             onPressed: carregarDiarios,
             icon: const Icon(Icons.sync),
             tooltip: 'Sincronizar',
           ),
-          IconButton(
+          const SizedBox(width: 8),
+          IconButton.filledTonal(
             onPressed: abrirConfiguracoes,
             icon: const Icon(Icons.settings_outlined),
             tooltip: 'Configurações',
           ),
+          const SizedBox(width: 10),
         ],
       ),
       body: RefreshIndicator(
@@ -995,75 +1608,7 @@ class _HomePageState extends State<HomePage> {
         child: ListView(
           padding: const EdgeInsets.all(18),
           children: [
-            Card(
-              elevation: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(18),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.nomeUsuario,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      widget.nomeObra,
-                      style: const TextStyle(
-                        color: Color(0xFF64748B),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      !obraFoiSelecionada
-                          ? 'Selecione uma obra para visualizar os registros'
-                          : termoBusca.trim().isEmpty && filtroStatus == 'TODOS'
-                              ? 'Diários desta obra: ${diariosDaObraSelecionada.length}'
-                              : 'Resultados encontrados: ${filtrados.length} de ${diariosDaObraSelecionada.length}',
-                      style: const TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 10),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: usandoDadosLocais
-                            ? const Color(0xFFFFFBEB)
-                            : const Color(0xFFECFDF5),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: usandoDadosLocais
-                              ? const Color(0xFFF59E0B)
-                              : const Color(0xFF10B981),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            usandoDadosLocais
-                                ? 'Modo offline: usando dados salvos no dispositivo'
-                                : 'Online: dados sincronizados com o servidor',
-                            style: const TextStyle(fontWeight: FontWeight.w800),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            formatarUltimaSincronizacao(),
-                            style: const TextStyle(
-                              color: Color(0xFF64748B),
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            homeHeroCard(filtrados.length),
             const SizedBox(height: 14),
             Card(
               elevation: 1,
@@ -1183,12 +1728,64 @@ class _HomePageState extends State<HomePage> {
                           Expanded(
                             child: OutlinedButton.icon(
                               onPressed: abrirPendentesOffline,
-                              icon: const Icon(Icons.drafts_outlined),
-                              label: const Text('Pendentes'),
+                              icon: Icon(
+                                enviandoPendentesAuto
+                                    ? Icons.sync
+                                    : Icons.drafts_outlined,
+                              ),
+                              label: Text(
+                                totalPendentesLocais > 0
+                                    ? 'Pendentes ($totalPendentesLocais)'
+                                    : 'Pendentes',
+                              ),
                             ),
                           ),
                         ],
                       ),
+                      if (totalPendentesLocais > 0 || enviandoPendentesAuto) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: enviandoPendentesAuto
+                                ? const Color(0xFFEFF6FF)
+                                : const Color(0xFFFFFBEB),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: enviandoPendentesAuto
+                                  ? const Color(0xFFBFDBFE)
+                                  : const Color(0xFFFDE68A),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                enviandoPendentesAuto
+                                    ? Icons.sync
+                                    : Icons.schedule_outlined,
+                                color: enviandoPendentesAuto
+                                    ? const Color(0xFF1D4ED8)
+                                    : const Color(0xFF92400E),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  enviandoPendentesAuto
+                                      ? 'Enviando diários pendentes...'
+                                      : '$totalPendentesLocais diário(s) aguardando envio.',
+                                  style: TextStyle(
+                                    color: enviandoPendentesAuto
+                                        ? const Color(0xFF1D4ED8)
+                                        : const Color(0xFF92400E),
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -1254,7 +1851,15 @@ class _HomePageState extends State<HomePage> {
                   });
                 },
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
+              const Text(
+                'Filtrar por status',
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  color: AppUI.text,
+                ),
+              ),
+              const SizedBox(height: 8),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
@@ -1265,23 +1870,27 @@ class _HomePageState extends State<HomePage> {
                     'DEVOLVIDO',
                   ].map((status) {
                     final selecionado = filtroStatus == status;
+                    final color = corStatusCard(status);
 
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: ChoiceChip(
-                        selected: selecionado,
-                        label: Text(labelFiltroStatus(status)),
-                        avatar: Icon(
-                          iconeFiltroStatus(status),
-                          size: 18,
-                        ),
-                        onSelected: (_) => selecionarFiltroStatus(status),
-                      ),
+                    return filtroChipModerno(
+                      label: labelFiltroStatus(status),
+                      icon: iconeFiltroStatus(status),
+                      selecionado: selecionado,
+                      color: color,
+                      onTap: () => selecionarFiltroStatus(status),
                     );
                   }).toList(),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
+              const Text(
+                'Período',
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  color: AppUI.text,
+                ),
+              ),
+              const SizedBox(height: 8),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
@@ -1293,19 +1902,14 @@ class _HomePageState extends State<HomePage> {
                   ].map((periodo) {
                     final selecionado = filtroPeriodo == periodo;
 
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: ChoiceChip(
-                        selected: selecionado,
-                        label: Text(labelFiltroPeriodo(periodo)),
-                        avatar: Icon(
-                          periodo == 'TODOS'
-                              ? Icons.calendar_month_outlined
-                              : Icons.date_range_outlined,
-                          size: 18,
-                        ),
-                        onSelected: (_) => selecionarFiltroPeriodo(periodo),
-                      ),
+                    return filtroChipModerno(
+                      label: labelFiltroPeriodo(periodo),
+                      icon: periodo == 'TODOS'
+                          ? Icons.calendar_month_outlined
+                          : Icons.date_range_outlined,
+                      selecionado: selecionado,
+                      color: const Color(0xFF2563EB),
+                      onTap: () => selecionarFiltroPeriodo(periodo),
                     );
                   }).toList(),
                 ),
@@ -1423,69 +2027,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               )
             else
-              ...filtrados.map((item) {
-                final status = normalizarStatus(item['status_aprovacao']);
-                final statusColor = corStatusCard(status);
-
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  elevation: 1,
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: statusColor.withOpacity(0.14),
-                      child: Icon(
-                        Icons.description_outlined,
-                        color: statusColor,
-                      ),
-                    ),
-                    title: Text(
-                      texto(item['data_diario'], padrao: 'Sem data'),
-                      style: const TextStyle(fontWeight: FontWeight.w900),
-                    ),
-                    subtitle: Padding(
-                      padding: const EdgeInsets.only(top: 7),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Obra: ${nomeObraDoDiario(item)}'),
-                          Text('Equipe: ${texto(item['equipe'])}'),
-                          Text('Serviço: ${texto(primeiroServico(item))}'),
-                          const SizedBox(height: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 9,
-                              vertical: 5,
-                            ),
-                            decoration: BoxDecoration(
-                              color: statusColor.withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(999),
-                              border: Border.all(
-                                color: statusColor.withOpacity(0.35),
-                              ),
-                            ),
-                            child: Text(
-                              texto(item['status_aprovacao'], padrao: status),
-                              style: TextStyle(
-                                color: statusColor,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => DiarioDetalhePage(diario: item),
-                        ),
-                      );
-                    },
-                  ),
-                );
-              }),
+              ...filtrados.map(diarioCard),
           ],
         ),
       ),
@@ -1501,6 +2043,12 @@ class DiarioDetalhePage extends StatelessWidget {
     required this.diario,
   });
 
+  static const Color azul = Color(0xFF1D4ED8);
+  static const Color azulEscuro = Color(0xFF0F172A);
+  static const Color fundo = Color(0xFFF4F7FB);
+  static const Color textoFraco = Color(0xFF64748B);
+  static const Color borda = Color(0xFFE2E8F0);
+
   String texto(dynamic valor, {String padrao = '-'}) {
     if (valor == null) return padrao;
     final str = valor.toString().trim();
@@ -1508,9 +2056,11 @@ class DiarioDetalhePage extends StatelessWidget {
   }
 
   String primeiroServico() {
-    final servicos = diario['servicos_executados_lista'];
+    final servicos = lista('servicos_executados_lista').isNotEmpty
+        ? lista('servicos_executados_lista')
+        : lista('servicos_executados');
 
-    if (servicos is List && servicos.isNotEmpty) {
+    if (servicos.isNotEmpty) {
       final primeiro = servicos.first;
 
       if (primeiro is Map) {
@@ -1532,6 +2082,30 @@ class DiarioDetalhePage extends StatelessWidget {
     }
 
     return [];
+  }
+
+  List<dynamic> listaPrimeiraDisponivel(List<String> chaves) {
+    for (final chave in chaves) {
+      final valor = lista(chave);
+
+      if (valor.isNotEmpty) {
+        return valor;
+      }
+    }
+
+    return [];
+  }
+
+  Map<String, dynamic> mapaPrimeiroDisponivel(List<String> chaves) {
+    for (final chave in chaves) {
+      final valor = diario[chave];
+
+      if (valor is Map) {
+        return Map<String, dynamic>.from(valor);
+      }
+    }
+
+    return {};
   }
 
   String normalizarStatus(dynamic valor) {
@@ -1570,6 +2144,24 @@ class DiarioDetalhePage extends StatelessWidget {
     }
   }
 
+  String dataFormatada() {
+    final valor = texto(diario['data_diario'], padrao: '');
+
+    if (valor.isEmpty) {
+      return texto(diario['data_registro'], padrao: 'Sem data');
+    }
+
+    try {
+      final data = DateTime.parse(valor);
+      final dia = data.day.toString().padLeft(2, '0');
+      final mes = data.month.toString().padLeft(2, '0');
+      final ano = data.year.toString();
+      return '$dia/$mes/$ano';
+    } catch (_) {
+      return valor;
+    }
+  }
+
   Widget statusPill(String status) {
     final color = corStatus(status);
 
@@ -1579,10 +2171,10 @@ class DiarioDetalhePage extends StatelessWidget {
         vertical: 8,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.14),
+        color: color.withOpacity(0.20),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color: color.withOpacity(0.45),
+          color: Colors.white.withOpacity(0.22),
         ),
       ),
       child: Row(
@@ -1598,7 +2190,7 @@ class DiarioDetalhePage extends StatelessWidget {
             status,
             style: const TextStyle(
               color: Colors.white,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w900,
               fontSize: 13,
             ),
           ),
@@ -1607,7 +2199,7 @@ class DiarioDetalhePage extends StatelessWidget {
     );
   }
 
-  Widget infoChip({
+  Widget chipVidro({
     required IconData icon,
     required String label,
   }) {
@@ -1617,10 +2209,10 @@ class DiarioDetalhePage extends StatelessWidget {
         vertical: 8,
       ),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: Colors.white.withOpacity(0.12),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color: const Color(0xFFE2E8F0),
+          color: Colors.white.withOpacity(0.18),
         ),
       ),
       child: Row(
@@ -1629,15 +2221,15 @@ class DiarioDetalhePage extends StatelessWidget {
           Icon(
             icon,
             size: 17,
-            color: const Color(0xFF475569),
+            color: Colors.white,
           ),
           const SizedBox(width: 6),
           Text(
             label,
             style: const TextStyle(
               fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF334155),
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
             ),
           ),
         ],
@@ -1645,41 +2237,51 @@ class DiarioDetalhePage extends StatelessWidget {
     );
   }
 
-  Widget contadorCard({
+  Widget numeroCard({
     required IconData icon,
     required String titulo,
     required String valor,
+    required Color color,
   }) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(22),
           border: Border.all(
-            color: const Color(0xFFE2E8F0),
+            color: borda,
           ),
           boxShadow: const [
             BoxShadow(
-              color: Color(0x0D000000),
-              blurRadius: 12,
-              offset: Offset(0, 5),
+              color: Color(0x0A000000),
+              blurRadius: 18,
+              offset: Offset(0, 8),
             ),
           ],
         ),
         child: Column(
           children: [
-            Icon(
-              icon,
-              color: const Color(0xFF1D4ED8),
-              size: 24,
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Icon(
+                icon,
+                color: color,
+                size: 23,
+              ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 9),
             Text(
               valor,
               style: const TextStyle(
-                fontSize: 20,
+                fontSize: 21,
                 fontWeight: FontWeight.w900,
+                color: azulEscuro,
               ),
             ),
             const SizedBox(height: 2),
@@ -1687,9 +2289,9 @@ class DiarioDetalhePage extends StatelessWidget {
               titulo,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                fontSize: 12,
-                color: Color(0xFF64748B),
-                fontWeight: FontWeight.w700,
+                fontSize: 11,
+                color: textoFraco,
+                fontWeight: FontWeight.w800,
               ),
             ),
           ],
@@ -1698,22 +2300,151 @@ class DiarioDetalhePage extends StatelessWidget {
     );
   }
 
-  Widget miniCard({
+  Widget secaoPremium({
+    required String titulo,
+    required IconData icon,
+    required List<Widget> children,
+    String? subtitulo,
+    Color color = azul,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: borda,
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0C000000),
+            blurRadius: 18,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 43,
+                height: 43,
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Icon(
+                  icon,
+                  color: color,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      titulo,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color: azulEscuro,
+                      ),
+                    ),
+                    if (subtitulo != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitulo,
+                        style: const TextStyle(
+                          color: textoFraco,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  Widget linhaInfo(String label, dynamic valor, {IconData? icon}) {
+    final conteudo = texto(valor);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 9),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: fundo,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borda),
+      ),
+      child: Row(
+        children: [
+          if (icon != null) ...[
+            Icon(
+              icon,
+              size: 18,
+              color: azul,
+            ),
+            const SizedBox(width: 9),
+          ],
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: textoFraco,
+                fontWeight: FontWeight.w800,
+                fontSize: 13,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Flexible(
+            child: Text(
+              conteudo,
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                color: azulEscuro,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget itemCard({
     required IconData icon,
     required String titulo,
     required List<String> linhas,
-    Color accentColor = const Color(0xFF1D4ED8),
+    Color color = azul,
   }) {
+    final linhasValidas = linhas.where((linha) {
+      final textoLinha = linha.trim();
+      return textoLinha.isNotEmpty &&
+          !textoLinha.endsWith(': -') &&
+          !textoLinha.endsWith(':');
+    }).toList();
+
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 11),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: const Color(0xFFE2E8F0),
-        ),
+        color: fundo,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: borda),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1722,12 +2453,12 @@ class DiarioDetalhePage extends StatelessWidget {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: accentColor.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(14),
+              color: color.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(15),
             ),
             child: Icon(
               icon,
-              color: accentColor,
+              color: color,
               size: 22,
             ),
           ),
@@ -1741,23 +2472,25 @@ class DiarioDetalhePage extends StatelessWidget {
                   style: const TextStyle(
                     fontWeight: FontWeight.w900,
                     fontSize: 15,
+                    color: azulEscuro,
                   ),
                 ),
-                const SizedBox(height: 6),
-                ...linhas
-                    .where((linha) => linha.trim().isNotEmpty)
-                    .map(
-                      (linha) => Padding(
-                        padding: const EdgeInsets.only(top: 3),
-                        child: Text(
-                          linha,
-                          style: const TextStyle(
-                            color: Color(0xFF475569),
-                            fontSize: 13,
-                          ),
+                if (linhasValidas.isNotEmpty) ...[
+                  const SizedBox(height: 7),
+                  ...linhasValidas.map(
+                    (linha) => Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        linha,
+                        style: const TextStyle(
+                          color: Color(0xFF475569),
+                          fontSize: 13,
+                          height: 1.25,
                         ),
                       ),
                     ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -1766,43 +2499,145 @@ class DiarioDetalhePage extends StatelessWidget {
     );
   }
 
+  Widget emptyBox(String texto) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: fundo,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: borda),
+      ),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.info_outline,
+            color: textoFraco,
+            size: 30,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            texto,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: textoFraco,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget textoObservacao(String conteudo, {Color color = const Color(0xFF92400E)}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: color.withOpacity(0.24),
+        ),
+      ),
+      child: Text(
+        conteudo,
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.w700,
+          height: 1.35,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final obra = diario['obra'] is Map ? diario['obra'] as Map : {};
-    final maoObra = lista('mao_obra_direta_lista');
-    final equipamentos = lista('maquinas_equipamentos_lista');
-    final materiais = lista('materiais_recebidos_utilizados_lista');
-    final servicos = lista('servicos_executados_lista');
+    final maoObra = listaPrimeiraDisponivel([
+      'mao_obra_direta_lista',
+      'mao_obra_direta',
+    ]);
+    final maoObraIndireta = listaPrimeiraDisponivel([
+      'mao_obra_indireta_lista',
+      'mao_obra_indireta',
+    ]);
+    final equipamentos = listaPrimeiraDisponivel([
+      'maquinas_equipamentos_lista',
+      'maquinas_equipamentos',
+    ]);
+    final materiais = listaPrimeiraDisponivel([
+      'materiais_recebidos_utilizados_lista',
+      'materiais_recebidos_utilizados',
+    ]);
+    final servicos = listaPrimeiraDisponivel([
+      'servicos_executados_lista',
+      'servicos_executados',
+    ]);
     final fotos = lista('fotos');
 
+    final compareceuCampo = mapaPrimeiroDisponivel([
+      'compareceu_campo_dict',
+      'compareceu_campo',
+    ]);
+    final sinalizacao = mapaPrimeiroDisponivel([
+      'material_sinalizacao_dict',
+      'material_sinalizacao',
+    ]);
+
     final status = normalizarStatus(diario['status_aprovacao']);
+    final statusColor = corStatus(status);
+    final observacoes = texto(
+      diario['comentarios_ocorrencias'] ??
+          diario['ocorrencias'] ??
+          diario['descricao'],
+      padrao: 'Sem ocorrências informadas.',
+    );
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: fundo,
       appBar: AppBar(
         title: Text('Diário #${texto(diario['id'])}'),
+        actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => GaleriaFotosPage(
+                    fotos: fotos,
+                    diarioId: texto(diario['id']),
+                    dataDiario: texto(diario['data_diario']),
+                  ),
+                ),
+              );
+            },
+            icon: const Icon(Icons.photo_library_outlined),
+            tooltip: 'Galeria',
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(18),
         children: [
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(22),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
+              gradient: LinearGradient(
                 colors: [
-                  Color(0xFF0F172A),
-                  Color(0xFF1D4ED8),
+                  azulEscuro,
+                  azul,
+                  statusColor,
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(28),
               boxShadow: const [
                 BoxShadow(
-                  color: Color(0x1F000000),
-                  blurRadius: 18,
-                  offset: Offset(0, 8),
+                  color: Color(0x26000000),
+                  blurRadius: 22,
+                  offset: Offset(0, 10),
                 ),
               ],
             ),
@@ -1810,21 +2645,22 @@ class DiarioDetalhePage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      width: 52,
-                      height: 52,
+                      width: 56,
+                      height: 56,
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.14),
-                        borderRadius: BorderRadius.circular(18),
+                        borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.22),
+                          color: Colors.white.withOpacity(0.20),
                         ),
                       ),
                       child: const Icon(
-                        Icons.description_outlined,
+                        Icons.assignment_turned_in_outlined,
                         color: Colors.white,
-                        size: 28,
+                        size: 30,
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -1833,19 +2669,19 @@ class DiarioDetalhePage extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Registro diário',
+                            'Registro diário de obra',
                             style: TextStyle(
                               color: Color(0xFFBFDBFE),
+                              fontWeight: FontWeight.w800,
                               fontSize: 13,
-                              fontWeight: FontWeight.w700,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            texto(diario['data_diario'], padrao: 'Sem data'),
+                            dataFormatada(),
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 24,
+                              fontSize: 27,
                               fontWeight: FontWeight.w900,
                             ),
                           ),
@@ -1856,29 +2692,45 @@ class DiarioDetalhePage extends StatelessWidget {
                 ),
                 const SizedBox(height: 18),
                 Text(
-                  texto(obra['nome'], padrao: 'Obra não informada'),
+                  texto(
+                    obra['nome'] ?? diario['obra_nome'] ?? diario['nome_obra'],
+                    padrao: 'Obra não informada',
+                  ),
                   style: const TextStyle(
                     color: Color(0xFFE0F2FE),
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
                   ),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 6),
+                Text(
+                  primeiroServico(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 18,
+                  ),
+                ),
+                const SizedBox(height: 16),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
                   children: [
                     statusPill(status),
-                    infoChip(
+                    chipVidro(
                       icon: Icons.cloud_outlined,
                       label: texto(
-                        diario['clima'],
+                        diario['clima'] ?? diario['clima_manha'],
                         padrao: 'Clima não informado',
                       ),
                     ),
-                    infoChip(
+                    chipVidro(
                       icon: Icons.groups_outlined,
                       label: 'Equipe: ${texto(diario['equipe'])}',
+                    ),
+                    chipVidro(
+                      icon: Icons.route_outlined,
+                      label: 'KM ${texto(diario['km_inicial'])} → ${texto(diario['km_final'])}',
                     ),
                   ],
                 ),
@@ -1888,167 +2740,217 @@ class DiarioDetalhePage extends StatelessWidget {
           const SizedBox(height: 14),
           Row(
             children: [
-              contadorCard(
-                icon: Icons.build_circle_outlined,
+              numeroCard(
+                icon: Icons.construction,
                 titulo: 'Serviços',
                 valor: servicos.length.toString(),
+                color: azul,
               ),
               const SizedBox(width: 10),
-              contadorCard(
-                icon: Icons.precision_manufacturing_outlined,
-                titulo: 'Equipamentos',
-                valor: equipamentos.length.toString(),
+              numeroCard(
+                icon: Icons.groups_outlined,
+                titulo: 'Pessoal',
+                valor: texto(diario['total_pessoal'], padrao: '${maoObra.length + maoObraIndireta.length}'),
+                color: const Color(0xFF0F766E),
               ),
               const SizedBox(width: 10),
-              contadorCard(
-                icon: Icons.inventory_2_outlined,
-                titulo: 'Materiais',
-                valor: materiais.length.toString(),
+              numeroCard(
+                icon: Icons.photo_library_outlined,
+                titulo: 'Fotos',
+                valor: fotos.length.toString(),
+                color: const Color(0xFF7C3AED),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          _SecaoCard(
-            titulo: 'Resumo do diário',
-            icone: Icons.dashboard_outlined,
+          const SizedBox(height: 14),
+          secaoPremium(
+            titulo: 'Resumo operacional',
+            subtitulo: 'Dados gerais do lançamento',
+            icon: Icons.dashboard_outlined,
             children: [
-              _LinhaInfo('Serviço principal', primeiroServico()),
-              _LinhaInfo('KM inicial', texto(diario['km_inicial'])),
-              _LinhaInfo('KM final', texto(diario['km_final'])),
-              _LinhaInfo(
-                'Distância',
-                texto(diario['distancia_total_formatada']),
-              ),
-              _LinhaInfo('Condição', texto(diario['condicao_operacao'])),
+              linhaInfo('Contrato/obra', obra['nome'] ?? diario['obra_nome'], icon: Icons.business_outlined),
+              linhaInfo('Equipe', diario['equipe'], icon: Icons.groups_outlined),
+              linhaInfo('Condição operacional', diario['condicao_operacao'] ?? diario['condicao_via'], icon: Icons.fact_check_outlined),
+              linhaInfo('Hora entrada', diario['hora_entrada'], icon: Icons.login),
+              linhaInfo('Hora saída', diario['hora_saida'], icon: Icons.logout),
+              linhaInfo('KM inicial', diario['km_inicial'], icon: Icons.start_outlined),
+              linhaInfo('KM final', diario['km_final'], icon: Icons.flag_outlined),
+              linhaInfo('Distância', diario['distancia_total_formatada'], icon: Icons.route_outlined),
             ],
           ),
-          const SizedBox(height: 12),
-          _SecaoCard(
+          secaoPremium(
+            titulo: 'Clima e segurança',
+            subtitulo: 'Condições e ocorrências do dia',
+            icon: Icons.health_and_safety_outlined,
+            color: const Color(0xFF0891B2),
+            children: [
+              linhaInfo('Clima manhã', diario['clima_manha'] ?? diario['clima'], icon: Icons.wb_sunny_outlined),
+              linhaInfo('Clima tarde', diario['clima_tarde'], icon: Icons.cloud_outlined),
+              linhaInfo('Acidente', diario['acidente'] ?? (diario['houve_acidente'] == true ? 'Houve' : 'Não houve'), icon: Icons.warning_amber_outlined),
+              if (texto(diario['tipo_ocorrencia'], padrao: '').isNotEmpty)
+                linhaInfo('Tipo/descrição', diario['tipo_ocorrencia'], icon: Icons.report_problem_outlined),
+              textoObservacao(observacoes),
+            ],
+          ),
+          secaoPremium(
             titulo: 'Serviços executados',
-            icone: Icons.build_circle_outlined,
+            subtitulo: '${servicos.length} serviço(s) informado(s)',
+            icon: Icons.construction,
+            color: azul,
             children: servicos.isEmpty
                 ? [
-                    const Text('Nenhum serviço informado.'),
+                    emptyBox('Nenhum serviço informado.'),
                   ]
                 : servicos.map((item) {
                     final servico = item is Map ? item : {};
-                    return miniCard(
-                      icon: Icons.construction,
+                    return itemCard(
+                      icon: Icons.build_circle_outlined,
                       titulo: texto(
                         servico['tipo_servico'] ?? servico['tipo'],
                         padrao: 'Serviço',
                       ),
                       linhas: [
-                        'KM: ${texto(servico['km_inicial'])} até ${texto(servico['km_final'])}',
+                        'KM inicial: ${texto(servico['km_inicial'] ?? servico['km_localizacao'])}',
+                        'KM final: ${texto(servico['km_final'] ?? servico['km_localizacao'])}',
                         'Lado: ${texto(servico['lado'])}',
-                        'Distância: ${texto(servico['distancia_formatada'])}',
-                        'Observação: ${texto(servico['observacao'] ?? servico['observacoes'])}',
+                        'Nº de remendos: ${texto(servico['numero_remendos'])}',
+                        'Largura: ${texto(servico['largura_m'])} m',
+                        'Área escavada: ${texto(servico['area_total_escavada_m2'])} m²',
+                        'Pedra nº3: ${texto(servico['volume_pedra_3_m3'])} m³',
+                        'BGS: ${texto(servico['volume_bgs_m3'])} m³',
+                        'Dreno/área: ${texto(servico['area_total_escavada_dreno_m2'])} m²',
+                        'Dreno/pedra nº3: ${texto(servico['volume_pedra_3_dreno_m3'])} m³',
+                        'Observação: ${texto(servico['observacao'] ?? servico['observacoes'] ?? servico['descricao_livre'])}',
                       ],
                     );
                   }).toList(),
           ),
-          const SizedBox(height: 12),
-          _SecaoCard(
-            titulo: 'Mão de obra direta',
-            icone: Icons.groups,
-            children: maoObra.isEmpty
-                ? [
-                    const Text('Nenhuma mão de obra informada.'),
-                  ]
-                : maoObra.map((item) {
-                    final mao = item is Map ? item : {};
-                    return miniCard(
-                      icon: Icons.person_outline,
-                      titulo: texto(mao['funcao'], padrao: 'Função'),
-                      linhas: [
-                        'Quantidade: ${texto(mao['quantidade'])}',
-                      ],
-                      accentColor: const Color(0xFF0F766E),
-                    );
-                  }).toList(),
-          ),
-          const SizedBox(height: 12),
-          _SecaoCard(
-            titulo: 'Equipamentos',
-            icone: Icons.precision_manufacturing_outlined,
-            children: equipamentos.isEmpty
-                ? [
-                    const Text('Nenhum equipamento informado.'),
-                  ]
-                : equipamentos.map((item) {
-                    final eq = item is Map ? item : {};
-                    return miniCard(
-                      icon: Icons.precision_manufacturing_outlined,
-                      titulo: texto(eq['equipamento'], padrao: 'Equipamento'),
-                      linhas: [
-                        'Código/Placa: ${texto(eq['codigo_placa'])}',
-                        'Horímetro/KM: ${texto(eq['horimetro_quilometragem'])}',
-                      ],
-                      accentColor: const Color(0xFF7C3AED),
-                    );
-                  }).toList(),
-          ),
-          const SizedBox(height: 12),
-          _SecaoCard(
+          secaoPremium(
             titulo: 'Materiais',
-            icone: Icons.inventory_2_outlined,
+            subtitulo: '${materiais.length} material(is) informado(s)',
+            icon: Icons.inventory_2_outlined,
+            color: const Color(0xFFEA580C),
             children: materiais.isEmpty
                 ? [
-                    const Text('Nenhum material informado.'),
+                    emptyBox('Nenhum material informado.'),
                   ]
                 : materiais.map((item) {
                     final mat = item is Map ? item : {};
-                    return miniCard(
+                    return itemCard(
                       icon: Icons.inventory_2_outlined,
                       titulo: texto(mat['material'], padrao: 'Material'),
+                      color: const Color(0xFFEA580C),
                       linhas: [
                         'Quantidade: ${texto(mat['quantidade'])} ${texto(mat['unidade'], padrao: '')}',
+                        'Temperatura CBUQ: ${texto(mat['temperatura_cbuq'])} °C',
                         'Placa: ${texto(mat['placa'])}',
                         'Ticket: ${texto(mat['ticket'])}',
                         'Hora chegada: ${texto(mat['hora_chegada'])}',
                         'Observação: ${texto(mat['observacao'])}',
                       ],
-                      accentColor: const Color(0xFFEA580C),
                     );
                   }).toList(),
           ),
-          const SizedBox(height: 12),
-          _SecaoCard(
-            titulo: 'Ocorrências e comentários',
-            icone: Icons.notes_outlined,
+          secaoPremium(
+            titulo: 'Equipamentos',
+            subtitulo: '${equipamentos.length} equipamento(s) informado(s)',
+            icon: Icons.precision_manufacturing_outlined,
+            color: const Color(0xFF7C3AED),
+            children: equipamentos.isEmpty
+                ? [
+                    emptyBox('Nenhum equipamento informado.'),
+                  ]
+                : equipamentos.map((item) {
+                    final eq = item is Map ? item : {};
+                    return itemCard(
+                      icon: Icons.precision_manufacturing_outlined,
+                      titulo: texto(eq['equipamento'], padrao: 'Equipamento'),
+                      color: const Color(0xFF7C3AED),
+                      linhas: [
+                        'Código/Placa: ${texto(eq['codigo_placa'])}',
+                        'Horímetro/KM: ${texto(eq['horimetro_quilometragem'])}',
+                        'Observação: ${texto(eq['observacao'])}',
+                      ],
+                    );
+                  }).toList(),
+          ),
+          secaoPremium(
+            titulo: 'Mão de obra direta',
+            subtitulo: '${maoObra.length} função(ões) lançada(s)',
+            icon: Icons.groups,
+            color: const Color(0xFF0F766E),
+            children: maoObra.isEmpty
+                ? [
+                    emptyBox('Nenhuma mão de obra direta informada.'),
+                  ]
+                : maoObra.map((item) {
+                    final mao = item is Map ? item : {};
+                    return itemCard(
+                      icon: Icons.person_outline,
+                      titulo: texto(mao['funcao'], padrao: 'Função'),
+                      color: const Color(0xFF0F766E),
+                      linhas: [
+                        'Quantidade: ${texto(mao['quantidade'])}',
+                      ],
+                    );
+                  }).toList(),
+          ),
+          secaoPremium(
+            titulo: 'Mão de obra indireta',
+            subtitulo: '${maoObraIndireta.length} função(ões) lançada(s)',
+            icon: Icons.supervisor_account_outlined,
+            color: const Color(0xFF2563EB),
+            children: maoObraIndireta.isEmpty
+                ? [
+                    emptyBox('Nenhuma mão de obra indireta informada.'),
+                  ]
+                : maoObraIndireta.map((item) {
+                    final mao = item is Map ? item : {};
+                    return itemCard(
+                      icon: Icons.badge_outlined,
+                      titulo: texto(mao['funcao'], padrao: 'Função'),
+                      color: const Color(0xFF2563EB),
+                      linhas: [
+                        'Quantidade: ${texto(mao['quantidade'])}',
+                      ],
+                    );
+                  }).toList(),
+          ),
+          secaoPremium(
+            titulo: 'Fiscalização em campo',
+            subtitulo: 'Presenças informadas no lançamento',
+            icon: Icons.verified_user_outlined,
+            color: const Color(0xFF475569),
+            children: compareceuCampo.isEmpty
+                ? [
+                    emptyBox('Nenhuma informação de comparecimento em campo.'),
+                  ]
+                : [
+                    linhaInfo('Inspetor de campo', compareceuCampo['inspetor_campo'], icon: Icons.engineering_outlined),
+                    linhaInfo('Fiscal da supervisora', compareceuCampo['fiscal_supervisora'], icon: Icons.manage_accounts_outlined),
+                    linhaInfo('Fiscal do DNIT', compareceuCampo['fiscal_dnit'], icon: Icons.account_balance_outlined),
+                    linhaInfo('Engenheiro', compareceuCampo['engenheiro'], icon: Icons.person_pin_circle_outlined),
+                  ],
+          ),
+          secaoPremium(
+            titulo: 'Sinalização',
+            subtitulo: 'Materiais de segurança utilizados',
+            icon: Icons.traffic_outlined,
+            color: const Color(0xFFF97316),
             children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFFBEB),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(
-                    color: const Color(0xFFFDE68A),
-                  ),
-                ),
-                child: Text(
-                  texto(
-                    diario['comentarios_ocorrencias'] ??
-                        diario['ocorrencias'] ??
-                        diario['descricao'],
-                    padrao: 'Sem ocorrências informadas.',
-                  ),
-                  style: const TextStyle(
-                    color: Color(0xFF713F12),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
+              linhaInfo('Cone plástico', sinalizacao['cone_plastico'], icon: Icons.traffic),
+              linhaInfo('Placa pare-siga', sinalizacao['placa_pare_siga'], icon: Icons.signpost_outlined),
+              linhaInfo('Cavalete metálico', sinalizacao['cavalete_metalico'], icon: Icons.construction_outlined),
             ],
           ),
-          const SizedBox(height: 12),
-          _SecaoCard(
-            titulo: 'Fotos',
-            icone: Icons.photo_library_outlined,
+          secaoPremium(
+            titulo: 'Fotos do diário',
+            subtitulo: '${fotos.length} foto(s) vinculada(s)',
+            icon: Icons.photo_library_outlined,
+            color: const Color(0xFF7C3AED),
             children: [
               InkWell(
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(20),
                 onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
@@ -2062,27 +2964,42 @@ class DiarioDetalhePage extends StatelessWidget {
                 },
                 child: Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(14),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEEF2FF),
-                    borderRadius: BorderRadius.circular(18),
+                    gradient: const LinearGradient(
+                      colors: [
+                        Color(0xFFEEF2FF),
+                        Color(0xFFF5F3FF),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: const Color(0xFFC7D2FE),
                     ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(
-                        Icons.photo_library_outlined,
-                        color: Color(0xFF3730A3),
+                      Container(
+                        width: 46,
+                        height: 46,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF7C3AED).withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Icon(
+                          Icons.photo_library_outlined,
+                          color: Color(0xFF7C3AED),
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          '${fotos.length} foto(s) vinculada(s) a este diário.',
+                          fotos.isEmpty
+                              ? 'Nenhuma foto vinculada a este diário.'
+                              : 'Abrir galeria com ${fotos.length} foto(s).',
                           style: const TextStyle(
                             color: Color(0xFF3730A3),
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w900,
                           ),
                         ),
                       ),
@@ -2094,11 +3011,6 @@ class DiarioDetalhePage extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
-              const Text(
-                'Toque para abrir a galeria. Download/cache offline das imagens será adicionado depois.',
-                style: TextStyle(color: Color(0xFF64748B)),
-              ),
             ],
           ),
         ],
@@ -2106,6 +3018,8 @@ class DiarioDetalhePage extends StatelessWidget {
     );
   }
 }
+
+
 
 class GaleriaFotosPage extends StatefulWidget {
   final List<dynamic> fotos;
@@ -4239,6 +5153,15 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
     }
   }
 
+  int totalItensPreenchidos() {
+    return servicos.length +
+        materiais.length +
+        equipamentos.length +
+        maoObra.length +
+        maoObraIndireta.length +
+        fotosOffline.length;
+  }
+
   Widget campoTexto({
     required TextEditingController controller,
     required String label,
@@ -4253,29 +5176,59 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
         controller: controller,
         maxLines: maxLines,
         validator: validator,
+        style: const TextStyle(
+          fontWeight: FontWeight.w800,
+          color: Color(0xFF0F172A),
+        ),
         decoration: InputDecoration(
           labelText: label,
           hintText: hint,
-          prefixIcon: icon == null ? null : Icon(icon),
+          prefixIcon: icon == null
+              ? null
+              : Container(
+                  margin: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEEF2FF),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: const Color(0xFF1D4ED8),
+                  ),
+                ),
           isDense: false,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
-            vertical: 16,
+            vertical: 17,
+          ),
+          labelStyle: const TextStyle(
+            color: Color(0xFF64748B),
+            fontWeight: FontWeight.w700,
+          ),
+          hintStyle: const TextStyle(
+            color: Color(0xFF94A3B8),
+            fontWeight: FontWeight.w600,
           ),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(20),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(20),
             borderSide: const BorderSide(
-              color: Color(0xFFCBD5E1),
+              color: Color(0xFFD7E0EA),
             ),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(20),
             borderSide: const BorderSide(
               color: Color(0xFF1D4ED8),
-              width: 1.4,
+              width: 1.6,
+            ),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: const BorderSide(
+              color: Color(0xFFEF4444),
             ),
           ),
           filled: true,
@@ -4290,9 +5243,22 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
     required IconData icon,
     required List<Widget> children,
   }) {
-    return Card(
-      elevation: 1,
+    return Container(
       margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: const Color(0xFFE2E8F0),
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0D000000),
+            blurRadius: 18,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
       child: Theme(
         data: Theme.of(context).copyWith(
           dividerColor: Colors.transparent,
@@ -4301,19 +5267,51 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
           initiallyExpanded: false,
           tilePadding: const EdgeInsets.symmetric(
             horizontal: 16,
-            vertical: 4,
+            vertical: 7,
           ),
-          leading: Icon(
-          icon,
-          color: const Color(0xFF1D4ED8),
-        ),
-        title: Text(
-          titulo,
-          style: const TextStyle(
-            fontWeight: FontWeight.w900,
+          collapsedShape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
           ),
-        ),
-          childrenPadding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          leading: Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [
+                  Color(0xFF1D4ED8),
+                  Color(0xFF60A5FA),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Icon(
+              icon,
+              color: Colors.white,
+              size: 22,
+            ),
+          ),
+          title: Text(
+            titulo,
+            style: const TextStyle(
+              fontWeight: FontWeight.w900,
+              color: Color(0xFF0F172A),
+              fontSize: 16,
+            ),
+          ),
+          subtitle: Text(
+            'Toque para preencher esta seção',
+            style: TextStyle(
+              color: Colors.grey.shade600,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 8, 16, 17),
           children: children,
         ),
       ),
@@ -4332,22 +5330,32 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
         if (itens.isEmpty)
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(14),
-            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.all(18),
+            margin: const EdgeInsets.only(bottom: 12),
             decoration: BoxDecoration(
               color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: const Color(0xFFE2E8F0),
               ),
             ),
-            child: Text(
-              vazio,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Color(0xFF64748B),
-                fontWeight: FontWeight.w700,
-              ),
+            child: Column(
+              children: [
+                const Icon(
+                  Icons.add_circle_outline,
+                  color: Color(0xFF94A3B8),
+                  size: 34,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  vazio,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Color(0xFF64748B),
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
             ),
           )
         else
@@ -4356,19 +5364,25 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
             final item = entry.value;
 
             return Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.only(bottom: 11),
+              padding: const EdgeInsets.all(13),
               decoration: BoxDecoration(
                 color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: const Color(0xFFE2E8F0),
                 ),
               ),
               child: Row(
                 children: [
-                  CircleAvatar(
-                    backgroundColor: const Color(0xFFDBEAFE),
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDBEAFE),
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    alignment: Alignment.center,
                     child: Text(
                       '${index + 1}',
                       style: const TextStyle(
@@ -4384,15 +5398,22 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
                       children: [
                         Text(
                           titulo(item),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontWeight: FontWeight.w900,
+                            color: Color(0xFF0F172A),
                           ),
                         ),
-                        const SizedBox(height: 3),
+                        const SizedBox(height: 4),
                         Text(
                           subtitulo(item),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             color: Color(0xFF64748B),
+                            fontWeight: FontWeight.w700,
+                            height: 1.25,
                           ),
                         ),
                       ],
@@ -4405,6 +5426,7 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
                       });
                     },
                     icon: const Icon(Icons.delete_outline),
+                    color: const Color(0xFFDC2626),
                   ),
                 ],
               ),
@@ -4412,10 +5434,20 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
           }),
         SizedBox(
           width: double.infinity,
+          height: 50,
           child: OutlinedButton.icon(
             onPressed: adicionar,
             icon: const Icon(Icons.add),
-            label: const Text('Adicionar'),
+            label: const Text('Adicionar item'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFF1D4ED8),
+              side: const BorderSide(
+                color: Color(0xFF1D4ED8),
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+            ),
           ),
         ),
       ],
@@ -4426,28 +5458,50 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
     required String chave,
     required String label,
   }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: DropdownButtonFormField<String>(
-        value: compareceuCampo[chave],
-        decoration: InputDecoration(
-          labelText: label,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(18),
-          ),
-          filled: true,
-          fillColor: Colors.white,
+    final valorAtual = compareceuCampo[chave] ?? 'Não';
+    final marcado = valorAtual == 'Sim';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: marcado ? const Color(0xFFECFDF5) : const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: marcado ? const Color(0xFF86EFAC) : const Color(0xFFE2E8F0),
         ),
-        items: const [
-          DropdownMenuItem(value: 'Sim', child: Text('Sim')),
-          DropdownMenuItem(value: 'Não', child: Text('Não')),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            marcado ? Icons.check_circle_outline : Icons.radio_button_unchecked,
+            color: marcado ? const Color(0xFF16A34A) : const Color(0xFF94A3B8),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF0F172A),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          SegmentedButton<String>(
+            segments: const [
+              ButtonSegment(value: 'Sim', label: Text('Sim')),
+              ButtonSegment(value: 'Não', label: Text('Não')),
+            ],
+            selected: {valorAtual},
+            showSelectedIcon: false,
+            onSelectionChanged: (valores) {
+              setState(() {
+                compareceuCampo[chave] = valores.first;
+              });
+            },
+          ),
         ],
-        onChanged: (valor) {
-          if (valor == null) return;
-          setState(() {
-            compareceuCampo[chave] = valor;
-          });
-        },
       ),
     );
   }
@@ -4458,13 +5512,20 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
     final arquivo = File(caminho);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
         border: Border.all(
           color: const Color(0xFFE2E8F0),
         ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0A000000),
+            blurRadius: 16,
+            offset: Offset(0, 7),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -4472,20 +5533,26 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
           if (arquivo.existsSync())
             ClipRRect(
               borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(16),
+                top: Radius.circular(22),
               ),
               child: Image.file(
                 arquivo,
                 width: double.infinity,
-                height: 170,
+                height: 185,
                 fit: BoxFit.cover,
               ),
             )
           else
             Container(
-              height: 110,
+              height: 120,
               width: double.infinity,
               alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                color: Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(22),
+                ),
+              ),
               child: const Icon(
                 Icons.broken_image_outlined,
                 size: 42,
@@ -4493,11 +5560,17 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
               ),
             ),
           Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(13),
             child: Row(
               children: [
-                CircleAvatar(
-                  backgroundColor: const Color(0xFFDBEAFE),
+                Container(
+                  width: 38,
+                  height: 38,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEEF2FF),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                   child: Text(
                     '${index + 1}',
                     style: const TextStyle(
@@ -4513,13 +5586,15 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF0F172A),
                     ),
                   ),
                 ),
                 IconButton(
                   onPressed: () => removerFotoOffline(index),
                   icon: const Icon(Icons.delete_outline),
+                  color: const Color(0xFFDC2626),
                   tooltip: 'Remover foto',
                 ),
               ],
@@ -4533,11 +5608,11 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFFF4F7FB),
       appBar: AppBar(
         title: Text(
           widget.rascunhoExistente == null
-              ? 'Novo diário offline'
+              ? 'Novo diário'
               : 'Editar pendente',
         ),
       ),
@@ -4548,41 +5623,78 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
           children: [
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(22),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
                   colors: [
                     Color(0xFF0F172A),
                     Color(0xFF1D4ED8),
+                    Color(0xFF38BDF8),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(28),
                 boxShadow: const [
                   BoxShadow(
-                    color: Color(0x1F000000),
-                    blurRadius: 18,
-                    offset: Offset(0, 8),
+                    color: Color(0x26000000),
+                    blurRadius: 22,
+                    offset: Offset(0, 10),
                   ),
                 ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(
-                    Icons.edit_document,
-                    color: Colors.white,
-                    size: 42,
+                  Row(
+                    children: [
+                      Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.14),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.22),
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.edit_document,
+                          color: Colors.white,
+                          size: 30,
+                        ),
+                      ),
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.14),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.22),
+                          ),
+                        ),
+                        child: Text(
+                          '${totalItensPreenchidos()} item(ns)',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 16),
                   Text(
                     widget.rascunhoExistente == null
-                        ? 'Diário pendente'
-                        : 'Editando diário pendente',
-                    style: TextStyle(
+                        ? 'Novo lançamento'
+                        : 'Editando lançamento pendente',
+                    style: const TextStyle(
                       color: Color(0xFFBFDBFE),
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -4590,16 +5702,18 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
                     widget.obraNome,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 23,
+                      fontSize: 24,
                       fontWeight: FontWeight.w900,
+                      height: 1.1,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   const Text(
-                    'Abra cada seção conforme for preenchendo. Se estiver offline, o diário fica pendente de envio.',
+                    'Preencha as seções do diário. Se estiver sem conexão, o lançamento fica salvo e será enviado automaticamente depois.',
                     style: TextStyle(
                       color: Color(0xFFE0F2FE),
-                      height: 1.3,
+                      height: 1.35,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
@@ -4895,7 +6009,7 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
                     ),
                   ),
                   child: const Text(
-                    'As fotos ficam salvas no dispositivo junto com o rascunho. O envio para o Flask entra na etapa de sincronização.',
+                    'As fotos ficam salvas junto com o diário pendente e serão enviadas automaticamente quando houver conexão.',
                     style: TextStyle(
                       color: Color(0xFF1E3A8A),
                       fontWeight: FontWeight.w700,
@@ -4998,8 +6112,18 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
               ],
             ),
             const SizedBox(height: 8),
-            SizedBox(
-              height: 54,
+            Container(
+              height: 58,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x261D4ED8),
+                    blurRadius: 18,
+                    offset: Offset(0, 8),
+                  ),
+                ],
+              ),
               child: FilledButton.icon(
                 onPressed: salvando ? null : salvarRascunho,
                 icon: Icon(
@@ -5011,6 +6135,17 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
                       : widget.rascunhoExistente == null
                           ? 'Salvar diário'
                           : 'Salvar alterações',
+                ),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF1D4ED8),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  textStyle: const TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16,
+                  ),
                 ),
               ),
             ),
@@ -5034,7 +6169,15 @@ class _PendentesOfflinePageState extends State<PendentesOfflinePage> {
   bool carregando = true;
   bool enviandoTodos = false;
   final Set<int> enviandoIds = {};
+  final Map<int, String> statusEnvio = {};
   List<RascunhosDiario> rascunhos = [];
+
+  static const Color fundo = Color(0xFFF4F7FB);
+  static const Color azul = Color(0xFF1D4ED8);
+  static const Color azulEscuro = Color(0xFF0F172A);
+  static const Color laranja = Color(0xFFF97316);
+  static const Color textoFraco = Color(0xFF64748B);
+  static const Color borda = Color(0xFFE2E8F0);
 
   @override
   void initState() {
@@ -5114,18 +6257,40 @@ class _PendentesOfflinePageState extends State<PendentesOfflinePage> {
       enviandoIds
         ..clear()
         ..addAll(rascunhos.map((item) => item.id));
+
+      for (final item in rascunhos) {
+        statusEnvio[item.id] = 'Enviando...';
+      }
     });
 
     int enviados = 0;
     int falhas = 0;
 
     for (final item in List<RascunhosDiario>.from(rascunhos)) {
+      if (mounted) {
+        setState(() {
+          statusEnvio[item.id] = 'Enviando...';
+        });
+      }
+
       final ok = await enviarPendenteSilencioso(item);
 
       if (ok) {
         enviados++;
+
+        if (mounted) {
+          setState(() {
+            statusEnvio[item.id] = 'Enviado com sucesso';
+          });
+        }
       } else {
         falhas++;
+
+        if (mounted) {
+          setState(() {
+            statusEnvio[item.id] = 'Falhou, tente novamente';
+          });
+        }
       }
     }
 
@@ -5162,10 +6327,17 @@ class _PendentesOfflinePageState extends State<PendentesOfflinePage> {
 
     setState(() {
       enviandoIds.add(item.id);
+      statusEnvio[item.id] = 'Enviando...';
     });
 
     try {
       await authService.enviarRascunhoDiario(item);
+
+      if (mounted) {
+        setState(() {
+          statusEnvio[item.id] = 'Enviado com sucesso';
+        });
+      }
 
       if (!mounted) {
         return;
@@ -5182,6 +6354,10 @@ class _PendentesOfflinePageState extends State<PendentesOfflinePage> {
       if (!mounted) {
         return;
       }
+
+      setState(() {
+        statusEnvio[item.id] = 'Falhou, tente novamente';
+      });
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -5211,9 +6387,13 @@ class _PendentesOfflinePageState extends State<PendentesOfflinePage> {
               onPressed: () => Navigator.of(context).pop(false),
               child: const Text('Cancelar'),
             ),
-            FilledButton(
+            FilledButton.icon(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Excluir'),
+              icon: const Icon(Icons.delete_outline),
+              label: const Text('Excluir'),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFB91C1C),
+              ),
             ),
           ],
         );
@@ -5225,6 +6405,12 @@ class _PendentesOfflinePageState extends State<PendentesOfflinePage> {
     }
 
     await authService.excluirRascunhoDiario(rascunho.id);
+
+    setState(() {
+      statusEnvio.remove(rascunho.id);
+      enviandoIds.remove(rascunho.id);
+    });
+
     await carregarPendentes();
   }
 
@@ -5238,98 +6424,453 @@ class _PendentesOfflinePageState extends State<PendentesOfflinePage> {
     return '$dia/$mes/$ano às $hora:$minuto';
   }
 
-  Widget cardRascunho(RascunhosDiario item) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () => abrirEdicaoRascunho(item),
-        child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const CircleAvatar(
-                  backgroundColor: Color(0xFFDBEAFE),
-                  child: Icon(
-                    Icons.edit_document,
-                    color: Color(0xFF1D4ED8),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    item.obraNome,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w900,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  onPressed: enviandoIds.contains(item.id)
-                      ? null
-                      : () => enviarPendente(item),
-                  icon: Icon(
-                    enviandoIds.contains(item.id)
-                        ? Icons.hourglass_empty
-                        : Icons.cloud_upload_outlined,
-                  ),
-                  tooltip: 'Enviar',
-                ),
-                IconButton(
-                  onPressed: () => abrirEdicaoRascunho(item),
-                  icon: const Icon(Icons.edit_outlined),
-                  tooltip: 'Editar',
-                ),
-                IconButton(
-                  onPressed: () => excluirRascunho(item),
-                  icon: const Icon(Icons.delete_outline),
-                  tooltip: 'Excluir',
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Text('Data: ${item.dataDiario ?? '-'}'),
-            Text('Equipe: ${item.equipe ?? '-'}'),
-            Text('Serviço: ${item.tipoServico ?? '-'}'),
-            Text('Clima: ${item.clima ?? '-'}'),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 10,
-                vertical: 6,
-              ),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFFBEB),
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(
-                  color: const Color(0xFFFDE68A),
-                ),
-              ),
-              child: const Text(
-                'Pendente de envio',
-                style: TextStyle(
-                  color: Color(0xFF92400E),
-                  fontWeight: FontWeight.w900,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Atualizado em ${formatarData(item.atualizadoEm)}',
-              style: const TextStyle(
-                color: Color(0xFF64748B),
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
+  Color corDoStatus(String status) {
+    if (status == 'Enviando...') return azul;
+    if (status == 'Enviado com sucesso') return const Color(0xFF10B981);
+    if (status == 'Falhou, tente novamente') return const Color(0xFFDC2626);
+    return laranja;
+  }
+
+  IconData iconeDoStatus(String status) {
+    if (status == 'Enviando...') return Icons.sync;
+    if (status == 'Enviado com sucesso') return Icons.check_circle_outline;
+    if (status == 'Falhou, tente novamente') return Icons.error_outline;
+    return Icons.schedule_outlined;
+  }
+
+  Widget chipStatusEnvio(RascunhosDiario item) {
+    final status = statusEnvio[item.id] ?? 'Pendente de envio';
+    final color = corDoStatus(status);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 11,
+        vertical: 7,
+      ),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.11),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: color.withOpacity(0.32),
         ),
       ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            iconeDoStatus(status),
+            size: 15,
+            color: color,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            status,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w900,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget infoLinha({
+    required IconData icon,
+    required String label,
+    required String valor,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 7),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            size: 17,
+            color: textoFraco,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '$label: ',
+            style: const TextStyle(
+              color: textoFraco,
+              fontWeight: FontWeight.w700,
+              fontSize: 13,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              valor.trim().isEmpty ? '-' : valor,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: azulEscuro,
+                fontWeight: FontWeight.w800,
+                fontSize: 13,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget botaoAcao({
+    required IconData icon,
+    required VoidCallback? onTap,
+    required String tooltip,
+    Color color = azul,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Container(
+          width: 42,
+          height: 42,
+          margin: const EdgeInsets.only(left: 7),
+          decoration: BoxDecoration(
+            color: onTap == null
+                ? const Color(0xFFE2E8F0)
+                : color.withOpacity(0.10),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: onTap == null
+                  ? const Color(0xFFCBD5E1)
+                  : color.withOpacity(0.25),
+            ),
+          ),
+          child: Icon(
+            icon,
+            color: onTap == null ? textoFraco : color,
+            size: 21,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget cardRascunho(RascunhosDiario item) {
+    final enviando = enviandoIds.contains(item.id);
+    final status = statusEnvio[item.id] ?? 'Pendente de envio';
+    final statusColor = corDoStatus(status);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: statusColor.withOpacity(0.18),
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0E000000),
+            blurRadius: 18,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(24),
+        onTap: () => abrirEdicaoRascunho(item),
+        child: Padding(
+          padding: const EdgeInsets.all(15),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          statusColor.withOpacity(0.95),
+                          statusColor.withOpacity(0.62),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(17),
+                    ),
+                    child: const Icon(
+                      Icons.edit_document,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Diário pendente',
+                          style: TextStyle(
+                            color: textoFraco,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          item.obraNome,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: azulEscuro,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 17,
+                            height: 1.15,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 13),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(13),
+                decoration: BoxDecoration(
+                  color: fundo,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: borda),
+                ),
+                child: Column(
+                  children: [
+                    infoLinha(
+                      icon: Icons.calendar_month_outlined,
+                      label: 'Data',
+                      valor: item.dataDiario ?? '-',
+                    ),
+                    infoLinha(
+                      icon: Icons.groups_outlined,
+                      label: 'Equipe',
+                      valor: item.equipe ?? '-',
+                    ),
+                    infoLinha(
+                      icon: Icons.construction,
+                      label: 'Serviço',
+                      valor: item.tipoServico ?? '-',
+                    ),
+                    infoLinha(
+                      icon: Icons.cloud_outlined,
+                      label: 'Clima',
+                      valor: item.clima ?? '-',
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  chipStatusEnvio(item),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 11,
+                      vertical: 7,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(color: borda),
+                    ),
+                    child: Text(
+                      'Atualizado em ${formatarData(item.atualizadoEm)}',
+                      style: const TextStyle(
+                        color: textoFraco,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: enviando ? null : () => enviarPendente(item),
+                      icon: Icon(
+                        enviando ? Icons.hourglass_empty : Icons.cloud_upload_outlined,
+                      ),
+                      label: Text(enviando ? 'Enviando...' : 'Enviar'),
+                    ),
+                  ),
+                  botaoAcao(
+                    icon: Icons.edit_outlined,
+                    onTap: () => abrirEdicaoRascunho(item),
+                    tooltip: 'Editar',
+                    color: azul,
+                  ),
+                  botaoAcao(
+                    icon: Icons.delete_outline,
+                    onTap: () => excluirRascunho(item),
+                    tooltip: 'Excluir',
+                    color: const Color(0xFFDC2626),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget emptyState() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: borda),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0A000000),
+            blurRadius: 18,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: const Column(
+        children: [
+          Icon(
+            Icons.cloud_done_outlined,
+            size: 46,
+            color: Color(0xFF10B981),
+          ),
+          SizedBox(height: 12),
+          Text(
+            'Tudo enviado',
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+              fontSize: 18,
+              color: azulEscuro,
+            ),
+          ),
+          SizedBox(height: 6),
+          Text(
+            'Nenhum diário pendente de envio no dispositivo.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: textoFraco,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget heroPendentes() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFF7C2D12),
+            Color(0xFFF97316),
+            Color(0xFFFFB020),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x26000000),
+            blurRadius: 22,
+            offset: Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 54,
+            height: 54,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(19),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.22),
+              ),
+            ),
+            child: Icon(
+              enviandoTodos ? Icons.sync : Icons.outbox_outlined,
+              color: Colors.white,
+              size: 30,
+            ),
+          ),
+          const SizedBox(height: 15),
+          const Text(
+            'Fila offline',
+            style: TextStyle(
+              color: Color(0xFFFFEDD5),
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            rascunhos.isEmpty
+                ? 'Nenhum pendente'
+                : '${rascunhos.length} diário(s) aguardando envio',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 25,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            enviandoTodos
+                ? 'Enviando os lançamentos salvos no dispositivo...'
+                : 'Quando houver conexão com a API, os diários serão enviados ao sistema.',
+            style: const TextStyle(
+              color: Color(0xFFFFF7ED),
+              height: 1.35,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget botaoEnviarTodos() {
+    return SizedBox(
+      width: double.infinity,
+      height: 54,
+      child: FilledButton.icon(
+        onPressed: rascunhos.isEmpty || enviandoTodos
+            ? null
+            : enviarTodosPendentes,
+        icon: Icon(
+          enviandoTodos ? Icons.hourglass_empty : Icons.cloud_upload_outlined,
+        ),
+        label: Text(
+          enviandoTodos ? 'Enviando pendentes...' : 'Enviar todos pendentes',
+        ),
+        style: FilledButton.styleFrom(
+          backgroundColor: azulEscuro,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+        ),
       ),
     );
   }
@@ -5337,7 +6878,7 @@ class _PendentesOfflinePageState extends State<PendentesOfflinePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: fundo,
       appBar: AppBar(
         title: const Text('Pendentes offline'),
       ),
@@ -5346,99 +6887,19 @@ class _PendentesOfflinePageState extends State<PendentesOfflinePage> {
         child: ListView(
           padding: const EdgeInsets.all(18),
           children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [
-                    Color(0xFF78350F),
-                    Color(0xFFF97316),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x1F000000),
-                    blurRadius: 18,
-                    offset: Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(
-                    Icons.drafts_outlined,
-                    color: Colors.white,
-                    size: 42,
-                  ),
-                  const SizedBox(height: 14),
-                  const Text(
-                    'Diários pendentes',
-                    style: TextStyle(
-                      color: Color(0xFFFFEDD5),
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '${rascunhos.length} diário(s) pendente(s)',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 23,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Estes diários ficam aguardando conexão para serem enviados ao sistema.',
-                    style: TextStyle(
-                      color: Color(0xFFFFF7ED),
-                      height: 1.3,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            heroPendentes(),
             const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: FilledButton.icon(
-                onPressed: rascunhos.isEmpty || enviandoTodos
-                    ? null
-                    : enviarTodosPendentes,
-                icon: Icon(
-                  enviandoTodos
-                      ? Icons.hourglass_empty
-                      : Icons.cloud_upload_outlined,
-                ),
-                label: Text(
-                  enviandoTodos ? 'Enviando...' : 'Enviar pendentes',
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
+            botaoEnviarTodos(),
+            const SizedBox(height: 14),
             if (carregando)
               const Center(
                 child: Padding(
-                  padding: EdgeInsets.all(24),
+                  padding: EdgeInsets.all(28),
                   child: CircularProgressIndicator(),
                 ),
               )
             else if (rascunhos.isEmpty)
-              const Card(
-                child: Padding(
-                  padding: EdgeInsets.all(18),
-                  child: Text(
-                    'Nenhum diário pendente de envio.',
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              )
+              emptyState()
             else
               ...rascunhos.map(cardRascunho),
           ],
@@ -5447,6 +6908,8 @@ class _PendentesOfflinePageState extends State<PendentesOfflinePage> {
     );
   }
 }
+
+
 
 class AppErrorHandler {
   AppErrorHandler._();
