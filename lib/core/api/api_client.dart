@@ -56,4 +56,53 @@ class ApiClient {
       ),
     );
   }
+
+  Future<Response> criarDiarioMobile(
+    String token,
+    Map<String, dynamic> payload,
+  ) {
+    return dio.post(
+      '/api/mobile/diarios',
+      data: payload,
+      options: Options(
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      ),
+    );
+  }
+
+  Future<Response> enviarFotosDiarioMobile(
+    String token,
+    int diarioId,
+    List<String> caminhosFotos,
+  ) async {
+    final formData = FormData();
+
+    for (final caminho in caminhosFotos) {
+      final nome = caminho.split(RegExp(r'[\\/]')).last;
+
+      formData.files.add(
+        MapEntry(
+          'fotos',
+          await MultipartFile.fromFile(
+            caminho,
+            filename: nome,
+          ),
+        ),
+      );
+    }
+
+    return dio.post(
+      '/api/mobile/diarios/$diarioId/fotos',
+      data: formData,
+      options: Options(
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'multipart/form-data',
+        },
+      ),
+    );
+  }
 }

@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../core/api/api_client.dart';
@@ -116,17 +119,176 @@ class AuthService {
           .map((item) => Map<String, dynamic>.from(item))
           .toList();
 
-      await database.salvarDiarios(diarios);
+      await database.salvarDiariosIncremental(
+        diarios,
+        limiteSolicitado: limite,
+      );
+
+      final totalLocal = await database.contarDiariosSalvos();
+
+      data['sincronizacao_incremental'] = {
+        'recebidos_api': diarios.length,
+        'total_local': totalLocal,
+        'limite_solicitado': limite,
+        'modo': 'incremental_upsert',
+      };
     }
 
     return data;
   }
 
-  Future<List<LocalDiario>> listarDiariosLocais({int limite = 50}) {
+  Future<List<LocalDiario>> listarDiariosLocais({int? limite}) {
     return database.listarUltimosDiarios(limite: limite);
+  }
+
+  Future<int> contarDiariosLocais() {
+    return database.contarDiariosSalvos();
   }
 
   Future<String?> buscarUltimaSincronizacao() {
     return database.buscarUltimaSincronizacao();
+  }
+
+  Future<Map<String, String?>> buscarResumoSincronizacao() {
+    return database.buscarResumoSincronizacao();
+  }
+
+  Future<int> salvarRascunhoDiario(Map<String, dynamic> dados) {
+    return database.salvarRascunhoDiario(dados);
+  }
+
+  Future<void> atualizarRascunhoDiario(
+    int id,
+    Map<String, dynamic> dados,
+  ) {
+    return database.atualizarRascunhoDiario(id, dados);
+  }
+
+  List<String> extrairCaminhosFotos(Map<String, dynamic> dados) {
+    final fotos = dados['fotos_offline'] ?? dados['fotos'];
+
+    if (fotos is! List) {
+      return [];
+    }
+
+    final caminhos = <String>[];
+
+    for (final foto in fotos) {
+      String? caminho;
+
+      if (foto is Map) {
+        caminho = foto['path']?.toString();
+      } else if (foto is String) {
+        caminho = foto;
+      }
+
+      if (caminho == null || caminho.trim().isEmpty) {
+        continue;
+      }
+
+      final arquivo = File(caminho.trim());
+
+      if (arquivo.existsSync()) {
+        caminhos.add(arquivo.path);
+      }
+    }
+
+    return caminhos;
+  }
+
+  Map<String, dynamic> payloadSemFotos(Map<String, dynamic> dados) {
+    final payload = Map<String, dynamic>.from(dados);
+
+    payload.remove('fotos');
+    payload.remove('fotos_offline');
+
+    if ((payload['descricao']?.toString().trim() ?? '').isEmpty) {
+      payload['descricao'] =
+          payload['comentarios_ocorrencias']?.toString().trim().isNotEmpty ==
+                  true
+              ? payload['comentarios_ocorrencias'].toString().trim()
+              : 'Diário DNIT preenchido pelo app mobile';
+    }
+
+    return payload;
+  }
+
+  Future<Map<String, dynamic>> enviarRascunhoDiario(
+    RascunhosDiario rascunho,
+  ) async {
+    final token = await getToken();
+
+    if (token == null || token.isEmpty) {
+      throw Exception('Sessão mobile não encontrada. Faça login novamente.');
+    }
+
+    final dados = Map<String, dynamic>.from(
+      jsonDecode(rascunho.jsonCompleto) as Map,
+    );
+
+    final fotos = extrairCaminhosFotos(dados);
+    final payload = payloadSemFotos(dados);
+
+    final response = await apiClient.criarDiarioMobile(
+      token,
+      payload,
+    );
+
+    final data = Map<String, dynamic>.from(response.data);
+
+    if (data['ok'] != true) {
+      throw Exception(data['erro']?.toString() ?? 'Erro ao enviar diário.');
+    }
+
+    final diarioId = data['id'] ?? (data['diario'] is Map ? data['diario']['id'] : null);
+    final diarioIdInt = int.tryParse(diarioId?.toString() ?? '');
+
+    if (diarioIdInt != null && fotos.isNotEmpty) {
+      final fotosResponse = await apiClient.enviarFotosDiarioMobile(
+        token,
+        diarioIdInt,
+        fotos,
+      );
+
+      final fotosData = Map<String, dynamic>.from(fotosResponse.data);
+
+      if (fotosData['ok'] != true) {
+        throw Exception(
+          fotosData['erro']?.toString() ??
+              'Diário criado, mas as fotos não foram enviadas.',
+        );
+      }
+    }
+
+    await excluirRascunhoDiario(rascunho.id);
+
+    try {
+      final resumoSync = await sync(limite: 300);
+
+      data['sincronizacao_pos_envio'] = resumoSync ?? {
+        'ok': false,
+        'erro': 'Sincronização não retornou dados.',
+      };
+    } catch (_) {
+      data['sincronizacao_pos_envio'] = {
+        'ok': false,
+        'erro': 'Diário enviado, mas a sincronização automática falhou.',
+      };
+    }
+
+    return data;
+  }
+
+
+  Future<List<RascunhosDiario>> listarRascunhosDiarios() {
+    return database.listarRascunhosDiarios();
+  }
+
+  Future<int> contarRascunhosDiarios() {
+    return database.contarRascunhosDiarios();
+  }
+
+  Future<void> excluirRascunhoDiario(int id) {
+    return database.excluirRascunhoDiario(id);
   }
 }
