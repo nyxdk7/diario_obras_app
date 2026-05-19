@@ -291,4 +291,61 @@ class AuthService {
   Future<void> excluirRascunhoDiario(int id) {
     return database.excluirRascunhoDiario(id);
   }
+
+  Future<Map<String, dynamic>> aprovarDiarioMobile(
+    int diarioId, {
+    String? observacao,
+  }) async {
+    final token = await getToken();
+
+    if (token == null || token.isEmpty) {
+      throw Exception('Sessão mobile não encontrada. Faça login novamente.');
+    }
+
+    final response = await apiClient.aprovarDiarioMobile(
+      token,
+      diarioId,
+      observacao: observacao,
+    );
+
+    return Map<String, dynamic>.from(response.data);
+  }
+
+  Future<Map<String, dynamic>> devolverDiarioMobile(
+    int diarioId, {
+    required String motivo,
+  }) async {
+    final token = await getToken();
+
+    if (token == null || token.isEmpty) {
+      throw Exception('Sessão mobile não encontrada. Faça login novamente.');
+    }
+
+    final response = await apiClient.devolverDiarioMobile(
+      token,
+      diarioId,
+      motivo: motivo,
+    );
+
+    return Map<String, dynamic>.from(response.data);
+  }
+
+
+  Future<Map<String, dynamic>?> listarPendenciasMobile({
+    int limite = 100,
+  }) async {
+    final token = await getToken();
+
+    if (token == null || token.isEmpty) {
+      return null;
+    }
+
+    final response = await apiClient.pendenciasMobile(
+      token,
+      limite: limite,
+    );
+
+    return Map<String, dynamic>.from(response.data);
+  }
+
 }

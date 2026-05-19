@@ -105,4 +105,64 @@ class ApiClient {
       ),
     );
   }
+
+  Future<Response> aprovarDiarioMobile(
+    String token,
+    int diarioId, {
+    String? observacao,
+  }) {
+    return dio.post(
+      '/api/mobile/diarios/$diarioId/aprovar',
+      data: {
+        if (observacao != null && observacao.trim().isNotEmpty)
+          'observacao': observacao.trim(),
+      },
+      options: Options(
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      ),
+    );
+  }
+
+  Future<Response> devolverDiarioMobile(
+    String token,
+    int diarioId, {
+    required String motivo,
+  }) {
+    return dio.post(
+      '/api/mobile/diarios/$diarioId/devolver',
+      data: {
+        'motivo': motivo.trim().isEmpty
+            ? 'Registro devolvido para correção.'
+            : motivo.trim(),
+      },
+      options: Options(
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      ),
+    );
+  }
+
+
+  Future<Response> pendenciasMobile(
+    String token, {
+    int limite = 100,
+  }) {
+    return dio.get(
+      '/api/mobile/pendencias',
+      queryParameters: {
+        'limite': limite,
+      },
+      options: Options(
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
+      ),
+    );
+  }
+
 }
