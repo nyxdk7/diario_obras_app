@@ -165,4 +165,46 @@ class ApiClient {
     );
   }
 
+
+  Future<Response> aprovarEdicaoDiarioMobile(
+    String token,
+    int diarioId, {
+    String? observacao,
+  }) {
+    return dio.post(
+      '/api/mobile/diarios/$diarioId/edicao/aprovar',
+      data: {
+        if (observacao != null && observacao.trim().isNotEmpty)
+          'observacao': observacao.trim(),
+      },
+      options: Options(
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      ),
+    );
+  }
+
+  Future<Response> rejeitarEdicaoDiarioMobile(
+    String token,
+    int diarioId, {
+    required String motivo,
+  }) {
+    return dio.post(
+      '/api/mobile/diarios/$diarioId/edicao/rejeitar',
+      data: {
+        'motivo': motivo.trim().isEmpty
+            ? 'Solicitação de edição rejeitada.'
+            : motivo.trim(),
+      },
+      options: Options(
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      ),
+    );
+  }
+
 }

@@ -984,6 +984,13 @@ class _HomePageState extends State<HomePage> {
   }
 
 
+  int totalPendenciasHome() {
+    final pendentesLocais = resumoStatus['PENDENTE'] ?? 0;
+    final devolvidosLocais = resumoStatus['DEVOLVIDO'] ?? 0;
+
+    return pendentesLocais + devolvidosLocais;
+  }
+
   Future<void> abrirCentralPendencias() async {
     await Navigator.of(context).push(
       MaterialPageRoute(
@@ -1608,10 +1615,40 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text('Dash Sistem'),
         actions: [
-          IconButton.filledTonal(
-            onPressed: abrirCentralPendencias,
-            icon: const Icon(Icons.rule_folder_outlined),
-            tooltip: 'Pendências da obra',
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              IconButton.filledTonal(
+                onPressed: abrirCentralPendencias,
+                icon: const Icon(Icons.rule_folder_outlined),
+                tooltip: 'Pendências da obra',
+              ),
+              if (totalPendenciasHome() > 0)
+                Positioned(
+                  right: 1,
+                  top: -2,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppUI.red,
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(color: Colors.white, width: 1.5),
+                    ),
+                    constraints: const BoxConstraints(minWidth: 20),
+                    child: Text(
+                      totalPendenciasHome() > 99
+                          ? '99+'
+                          : totalPendenciasHome().toString(),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(width: 8),
           IconButton.filledTonal(
@@ -2406,6 +2443,205 @@ class _CentralPendenciasPageState extends State<CentralPendenciasPage> {
     }
   }
 
+  int? idDiarioPendencia(Map<String, dynamic> diario) {
+    final valor = diario['id'];
+    if (valor is int) return valor;
+    return int.tryParse(valor?.toString() ?? '');
+  }
+
+  String mensagemErroRevisaoEdicao(Object erro) {
+    if (erro is DioException) {
+      final data = erro.response?.data;
+
+      if (data is Map && data['erro'] != null) {
+        return data['erro'].toString();
+      }
+
+      return AppErrorHandler.mensagemModoOffline(erro);
+    }
+
+    return 'Não foi possível concluir a ação agora.';
+  }
+
+  Future<void> aprovarSolicitacaoEdicao(Map<String, dynamic> diario) async {
+    final id = idDiarioPendencia(diario);
+
+    if (id == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ID do diário não encontrado.')),
+      );
+      return;
+    }
+
+    final confirmou = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Aprovar edição?'),
+          content: const Text(
+            'O apontador será autorizado a editar este diário. Deseja continuar?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton.icon(
+              onPressed: () => Navigator.of(context).pop(true),
+              icon: const Icon(Icons.check_circle_outline),
+              label: const Text('Aprovar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmou != true) {
+      return;
+    }
+
+    try {
+      await authService.aprovarEdicaoDiarioMobile(
+        id,
+        observacao: 'Solicitação de edição aprovada pelo app mobile.',
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Solicitação de edição aprovada.')),
+      );
+
+      await carregarPendencias();
+    } catch (erro) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(mensagemErroRevisaoEdicao(erro))),
+      );
+    }
+  }
+
+  Future<void> rejeitarSolicitacaoEdicao(Map<String, dynamic> diario) async {
+    final id = idDiarioPendencia(diario);
+
+    if (id == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ID do diário não encontrado.')),
+      );
+      return;
+    }
+
+    final motivoController = TextEditingController();
+
+    final motivo = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Rejeitar edição'),
+          content: TextField(
+            controller: motivoController,
+            maxLines: 4,
+            decoration: const InputDecoration(
+              labelText: 'Motivo da rejeição',
+              hintText: 'Ex.: Solicitação sem justificativa suficiente...',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(null),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton.icon(
+              onPressed: () {
+                final texto = motivoController.text.trim();
+                Navigator.of(context).pop(
+                  texto.isEmpty ? 'Solicitação de edição rejeitada.' : texto,
+                );
+              },
+              icon: const Icon(Icons.close),
+              label: const Text('Rejeitar'),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppUI.red,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (motivo == null) {
+      return;
+    }
+
+    try {
+      await authService.rejeitarEdicaoDiarioMobile(
+        id,
+        motivo: motivo,
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Solicitação de edição rejeitada.')),
+      );
+
+      await carregarPendencias();
+    } catch (erro) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(mensagemErroRevisaoEdicao(erro))),
+      );
+    }
+  }
+
+  Widget botoesAcaoEdicao(Map<String, dynamic> diario) {
+    if (filtro != 'edicoes_pendentes') {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: FilledButton.icon(
+              onPressed: () => aprovarSolicitacaoEdicao(diario),
+              icon: const Icon(Icons.check_circle_outline),
+              label: const Text('Aprovar'),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppUI.green,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 9),
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: () => rejeitarSolicitacaoEdicao(diario),
+              icon: const Icon(Icons.close),
+              label: const Text('Rejeitar'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppUI.red,
+                side: const BorderSide(color: AppUI.red),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget cardPendencia(Map<String, dynamic> diario) {
     final color = corStatus(filtro);
 
@@ -2490,6 +2726,7 @@ class _CentralPendenciasPageState extends State<CentralPendenciasPage> {
                           chipInfo('Equipe: ${texto(diario['equipe'])}', AppUI.blue),
                       ],
                     ),
+                    botoesAcaoEdicao(diario),
                   ],
                 ),
               ),
