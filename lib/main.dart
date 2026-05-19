@@ -3601,7 +3601,11 @@ class DiarioDetalhePage extends StatelessWidget {
 
   bool get usuarioPodeAprovarDevolver {
     final nivel = nivelUsuario.trim().toLowerCase();
-    return nivel == 'engenheiro' || nivel == 'admin' || nivel == 'diretor';
+
+    // Só bloqueia visualmente para apontador.
+    // Engenheiro/admin/diretor continuam vendo aprovar/devolver.
+    // Se o nível vier vazio por alguma navegação antiga, não bloqueia.
+    return nivel != 'apontador';
   }
 
   int? idDiario() {
