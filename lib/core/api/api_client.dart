@@ -207,4 +207,42 @@ class ApiClient {
     );
   }
 
+
+  Future<Response> aprovarExclusaoDiarioMobile(
+    String token,
+    int diarioId,
+  ) {
+    return dio.post(
+      '/api/mobile/diarios/$diarioId/exclusao/aprovar',
+      data: {},
+      options: Options(
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      ),
+    );
+  }
+
+  Future<Response> rejeitarExclusaoDiarioMobile(
+    String token,
+    int diarioId, {
+    required String motivo,
+  }) {
+    return dio.post(
+      '/api/mobile/diarios/$diarioId/exclusao/rejeitar',
+      data: {
+        'motivo': motivo.trim().isEmpty
+            ? 'Solicitação de exclusão rejeitada.'
+            : motivo.trim(),
+      },
+      options: Options(
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      ),
+    );
+  }
+
 }
