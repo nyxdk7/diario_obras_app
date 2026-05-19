@@ -245,4 +245,43 @@ class ApiClient {
     );
   }
 
+
+  Future<Response> solicitarEdicaoDiarioMobile(
+    String token,
+    int diarioId, {
+    required String motivo,
+  }) {
+    return dio.post(
+      '/api/mobile/diarios/$diarioId/solicitar-edicao',
+      data: {
+        'motivo': motivo.trim(),
+      },
+      options: Options(
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      ),
+    );
+  }
+
+  Future<Response> solicitarExclusaoDiarioMobile(
+    String token,
+    int diarioId, {
+    required String motivo,
+  }) {
+    return dio.post(
+      '/api/mobile/diarios/$diarioId/solicitar-exclusao',
+      data: {
+        'motivo': motivo.trim(),
+      },
+      options: Options(
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      ),
+    );
+  }
+
 }

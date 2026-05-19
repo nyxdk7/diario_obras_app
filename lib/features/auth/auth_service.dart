@@ -24,6 +24,7 @@ class AuthService {
   static const String _tokenKey = 'mobile_token';
   static const String _nomeUsuarioKey = 'nome_usuario';
   static const String _nomeObraKey = 'nome_obra';
+  static const String _nivelUsuarioKey = 'nivel_usuario';
 
   Future<Map<String, dynamic>> login({
     required String username,
@@ -51,7 +52,12 @@ class AuthService {
           key: _nomeUsuarioKey,
           value: usuario['nome_completo']?.toString() ??
               usuario['username']?.toString() ??
-              'Engenheiro',
+              'Usuário',
+        );
+
+        await storage.write(
+          key: _nivelUsuarioKey,
+          value: usuario['nivel']?.toString() ?? '',
         );
       }
 
@@ -79,10 +85,12 @@ class AuthService {
 
     final nomeUsuario = await storage.read(key: _nomeUsuarioKey);
     final nomeObra = await storage.read(key: _nomeObraKey);
+    final nivelUsuario = await storage.read(key: _nivelUsuarioKey);
 
     return {
-      'nomeUsuario': nomeUsuario ?? 'Engenheiro',
+      'nomeUsuario': nomeUsuario ?? 'Usuário',
       'nomeObra': nomeObra ?? 'Obra vinculada',
+      'nivelUsuario': nivelUsuario ?? '',
     };
   }
 
@@ -90,6 +98,7 @@ class AuthService {
     await storage.delete(key: _tokenKey);
     await storage.delete(key: _nomeUsuarioKey);
     await storage.delete(key: _nomeObraKey);
+    await storage.delete(key: _nivelUsuarioKey);
   }
 
   Future<Map<String, dynamic>?> me() async {
@@ -416,6 +425,45 @@ class AuthService {
     }
 
     final response = await apiClient.rejeitarExclusaoDiarioMobile(
+      token,
+      diarioId,
+      motivo: motivo,
+    );
+
+    return Map<String, dynamic>.from(response.data);
+  }
+
+
+  Future<Map<String, dynamic>> solicitarEdicaoDiarioMobile(
+    int diarioId, {
+    required String motivo,
+  }) async {
+    final token = await getToken();
+
+    if (token == null || token.isEmpty) {
+      throw Exception('Sessão mobile não encontrada. Faça login novamente.');
+    }
+
+    final response = await apiClient.solicitarEdicaoDiarioMobile(
+      token,
+      diarioId,
+      motivo: motivo,
+    );
+
+    return Map<String, dynamic>.from(response.data);
+  }
+
+  Future<Map<String, dynamic>> solicitarExclusaoDiarioMobile(
+    int diarioId, {
+    required String motivo,
+  }) async {
+    final token = await getToken();
+
+    if (token == null || token.isEmpty) {
+      throw Exception('Sessão mobile não encontrada. Faça login novamente.');
+    }
+
+    final response = await apiClient.solicitarExclusaoDiarioMobile(
       token,
       diarioId,
       motivo: motivo,

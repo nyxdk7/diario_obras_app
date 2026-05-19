@@ -204,8 +204,9 @@ class _AppStartPageState extends State<AppStartPage> {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => HomePage(
-            nomeUsuario: sessao['nomeUsuario'] ?? 'Engenheiro',
+            nomeUsuario: sessao['nomeUsuario'] ?? 'Usuário',
             nomeObra: sessao['nomeObra'] ?? 'Obra vinculada',
+            nivelUsuario: sessao['nivelUsuario'] ?? '',
           ),
         ),
       );
@@ -477,11 +478,13 @@ class _LoginPageState extends State<LoginPage> {
 class HomePage extends StatefulWidget {
   final String nomeUsuario;
   final String nomeObra;
+  final String nivelUsuario;
 
   const HomePage({
     super.key,
     required this.nomeUsuario,
     required this.nomeObra,
+    this.nivelUsuario = '',
   });
 
   @override
@@ -1506,7 +1509,10 @@ class _HomePageState extends State<HomePage> {
         onTap: () async {
           final atualizou = await Navigator.of(context).push<bool>(
             MaterialPageRoute(
-              builder: (_) => DiarioDetalhePage(diario: item),
+              builder: (_) => DiarioDetalhePage(
+                diario: item,
+                nivelUsuario: widget.nivelUsuario,
+              ),
             ),
           );
 
@@ -3072,10 +3078,12 @@ class _CentralPendenciasPageState extends State<CentralPendenciasPage> {
 
 class DiarioDetalhePage extends StatelessWidget {
   final Map<String, dynamic> diario;
+  final String nivelUsuario;
 
   const DiarioDetalhePage({
     super.key,
     required this.diario,
+    this.nivelUsuario = '',
   });
 
   static const Color azul = Color(0xFF1D4ED8);
@@ -3587,6 +3595,15 @@ class DiarioDetalhePage extends StatelessWidget {
   }
 
 
+  bool get usuarioEhApontador {
+    return nivelUsuario.trim().toLowerCase() == 'apontador';
+  }
+
+  bool get usuarioPodeAprovarDevolver {
+    final nivel = nivelUsuario.trim().toLowerCase();
+    return nivel == 'engenheiro' || nivel == 'admin' || nivel == 'diretor';
+  }
+
   int? idDiario() {
     final valor = diario['id'];
     if (valor is int) return valor;
@@ -3765,8 +3782,293 @@ class DiarioDetalhePage extends StatelessWidget {
     }
   }
 
+  bool podeSolicitarAlteracao() {
+    if (!usuarioEhApontador) {
+      return false;
+    }
+
+    final statusEdicao = (diario['status_edicao_solicitada'] ?? '')
+        .toString()
+        .trim()
+        .toUpperCase();
+
+    final statusExclusao = (diario['status_exclusao_solicitada'] ?? '')
+        .toString()
+        .trim()
+        .toUpperCase();
+
+    return statusEdicao != 'PENDENTE' && statusExclusao != 'PENDENTE';
+  }
+
+  Future<String?> pedirMotivo(
+    BuildContext context, {
+    required String titulo,
+    required String label,
+    required String dica,
+  }) {
+    final controller = TextEditingController();
+
+    return showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(titulo),
+          content: TextField(
+            controller: controller,
+            maxLines: 4,
+            decoration: InputDecoration(
+              labelText: label,
+              hintText: dica,
+              border: const OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(null),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton.icon(
+              onPressed: () {
+                final texto = controller.text.trim();
+
+                if (texto.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Informe o motivo da solicitação.')),
+                  );
+                  return;
+                }
+
+                Navigator.of(context).pop(texto);
+              },
+              icon: const Icon(Icons.send_outlined),
+              label: const Text('Enviar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> solicitarEdicaoDiario(BuildContext context) async {
+    final id = idDiario();
+
+    if (id == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ID do diário não encontrado.')),
+      );
+      return;
+    }
+
+    final motivo = await pedirMotivo(
+      context,
+      titulo: 'Solicitar edição',
+      label: 'Motivo da solicitação',
+      dica: 'Ex.: Corrigir quilometragem, fotos ou mão de obra...',
+    );
+
+    if (motivo == null) return;
+
+    try {
+      await AuthService().solicitarEdicaoDiarioMobile(
+        id,
+        motivo: motivo,
+      );
+
+      await AuthService().sync(limite: 300);
+
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Solicitação de edição enviada.')),
+      );
+
+      Navigator.of(context).pop(true);
+    } catch (erro) {
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(mensagemErroAcao(erro))),
+      );
+    }
+  }
+
+  Future<void> solicitarExclusaoDiario(BuildContext context) async {
+    final id = idDiario();
+
+    if (id == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ID do diário não encontrado.')),
+      );
+      return;
+    }
+
+    final motivo = await pedirMotivo(
+      context,
+      titulo: 'Solicitar exclusão',
+      label: 'Motivo da solicitação',
+      dica: 'Ex.: Diário lançado duplicado ou no registro errado...',
+    );
+
+    if (motivo == null) return;
+
+    final confirmou = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Confirmar solicitação?'),
+          content: const Text(
+            'A solicitação será enviada para revisão do engenheiro. O diário não será excluído agora.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton.icon(
+              onPressed: () => Navigator.of(context).pop(true),
+              icon: const Icon(Icons.send_outlined),
+              label: const Text('Enviar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmou != true) return;
+
+    try {
+      await AuthService().solicitarExclusaoDiarioMobile(
+        id,
+        motivo: motivo,
+      );
+
+      await AuthService().sync(limite: 300);
+
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Solicitação de exclusão enviada.')),
+      );
+
+      Navigator.of(context).pop(true);
+    } catch (erro) {
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(mensagemErroAcao(erro))),
+      );
+    }
+  }
+
+  Widget blocoSolicitacoesApontador(BuildContext context) {
+    if (!podeSolicitarAlteracao()) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: borda),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0C000000),
+            blurRadius: 18,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 43,
+                height: 43,
+                decoration: BoxDecoration(
+                  color: azul.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: const Icon(
+                  Icons.outgoing_mail,
+                  color: azul,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Solicitações',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color: azulEscuro,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Peça autorização para corrigir ou excluir este diário',
+                      style: TextStyle(
+                        color: textoFraco,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Column(
+            children: [
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => solicitarEdicaoDiario(context),
+                  icon: const Icon(Icons.edit_note_outlined),
+                  label: const Text('Solicitar edição'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: azul,
+                    side: const BorderSide(color: azul),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => solicitarExclusaoDiario(context),
+                  icon: const Icon(Icons.delete_outline),
+                  label: const Text('Solicitar exclusão'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Color(0xFFEF4444),
+                    side: const BorderSide(color: Color(0xFFEF4444)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget blocoAcoesRevisao(BuildContext context, String status) {
-    if (!podeAprovarOuDevolver(status)) {
+    if (!usuarioPodeAprovarDevolver || !podeAprovarOuDevolver(status)) {
       return const SizedBox.shrink();
     }
 
@@ -4083,6 +4385,7 @@ class DiarioDetalhePage extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           blocoAcoesRevisao(context, status),
+          blocoSolicitacoesApontador(context),
           secaoPremium(
             titulo: 'Resumo operacional',
             subtitulo: 'Dados gerais do lançamento',
