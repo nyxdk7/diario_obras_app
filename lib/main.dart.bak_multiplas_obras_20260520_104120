@@ -10,6 +10,7 @@ import 'core/api/api_client.dart';
 import 'core/database/app_database.dart';
 import 'features/auth/auth_service.dart';
 
+
 class AppUI {
   AppUI._();
 
@@ -41,7 +42,11 @@ class AppUI {
   );
 
   static List<BoxShadow> softShadow = const [
-    BoxShadow(color: Color(0x140F172A), blurRadius: 24, offset: Offset(0, 12)),
+    BoxShadow(
+      color: Color(0x140F172A),
+      blurRadius: 24,
+      offset: Offset(0, 12),
+    ),
   ];
 
   static ThemeData get theme {
@@ -84,10 +89,7 @@ class AppUI {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: surface,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 16,
-        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
           borderSide: const BorderSide(color: border),
@@ -107,7 +109,9 @@ class AppUI {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
           ),
-          textStyle: const TextStyle(fontWeight: FontWeight.w900),
+          textStyle: const TextStyle(
+            fontWeight: FontWeight.w900,
+          ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -117,7 +121,9 @@ class AppUI {
             borderRadius: BorderRadius.circular(18),
           ),
           side: const BorderSide(color: border),
-          textStyle: const TextStyle(fontWeight: FontWeight.w900),
+          textStyle: const TextStyle(
+            fontWeight: FontWeight.w900,
+          ),
         ),
       ),
       chipTheme: ChipThemeData(
@@ -126,9 +132,14 @@ class AppUI {
         disabledColor: const Color(0xFFE2E8F0),
         surfaceTintColor: Colors.transparent,
         checkmarkColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(999),
+        ),
         side: const BorderSide(color: Color(0xFFCBD5E1)),
-        labelStyle: const TextStyle(fontWeight: FontWeight.w900, color: text),
+        labelStyle: const TextStyle(
+          fontWeight: FontWeight.w900,
+          color: text,
+        ),
         secondaryLabelStyle: const TextStyle(
           fontWeight: FontWeight.w900,
           color: Colors.white,
@@ -175,16 +186,18 @@ class _AppStartPageState extends State<AppStartPage> {
 
   Future<void> verificarSessao() async {
     try {
-      final sessao = await authService.getSessaoLocal().timeout(
-        const Duration(seconds: 6),
-      );
+      final sessao = await authService
+          .getSessaoLocal()
+          .timeout(const Duration(seconds: 6));
 
       if (!mounted) return;
 
       if (sessao == null) {
-        Navigator.of(
-          context,
-        ).pushReplacement(MaterialPageRoute(builder: (_) => const LoginPage()));
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => const LoginPage(),
+          ),
+        );
         return;
       }
 
@@ -204,9 +217,11 @@ class _AppStartPageState extends State<AppStartPage> {
 
       if (!mounted) return;
 
-      Navigator.of(
-        context,
-      ).pushReplacement(MaterialPageRoute(builder: (_) => const LoginPage()));
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => const LoginPage(),
+        ),
+      );
     }
   }
 
@@ -214,7 +229,9 @@ class _AppStartPageState extends State<AppStartPage> {
   Widget build(BuildContext context) {
     return const Scaffold(
       backgroundColor: Color(0xFFF8FAFC),
-      body: Center(child: CircularProgressIndicator()),
+      body: Center(
+        child: CircularProgressIndicator(),
+      ),
     );
   }
 }
@@ -268,12 +285,10 @@ class _LoginPageState extends State<LoginPage> {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (_) => HomePage(
-              nomeUsuario:
-                  usuario?['nome_completo']?.toString() ??
+              nomeUsuario: usuario?['nome_completo']?.toString() ??
                   usuario?['username']?.toString() ??
-                  'Usuário',
+                  'Engenheiro',
               nomeObra: obra?['nome']?.toString() ?? 'Obra vinculada',
-              nivelUsuario: usuario?['nivel']?.toString() ?? '',
             ),
           ),
         );
@@ -281,7 +296,9 @@ class _LoginPageState extends State<LoginPage> {
         mostrarMensagem(resposta['erro']?.toString() ?? 'Erro ao fazer login.');
       }
     } on DioException catch (erro) {
-      mostrarMensagem(AppErrorHandler.mensagemLogin(erro));
+      mostrarMensagem(
+        AppErrorHandler.mensagemLogin(erro),
+      );
     } catch (_) {
       mostrarMensagem(
         'Erro inesperado ao fazer login. Feche o app, abra novamente e tente outra vez.',
@@ -296,7 +313,9 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void mostrarMensagem(String texto) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(texto)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(texto)),
+    );
   }
 
   @override
@@ -305,7 +324,11 @@ class _LoginPageState extends State<LoginPage> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF0F172A), Color(0xFF1D4ED8), Color(0xFFF4F7FB)],
+            colors: [
+              Color(0xFF0F172A),
+              Color(0xFF1D4ED8),
+              Color(0xFFF4F7FB),
+            ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             stops: [0, 0.48, 0.48],
@@ -326,9 +349,7 @@ class _LoginPageState extends State<LoginPage> {
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.10),
                         borderRadius: BorderRadius.circular(28),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.16),
-                        ),
+                        border: Border.all(color: Colors.white.withOpacity(0.16)),
                       ),
                       child: const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -423,14 +444,10 @@ class _LoginPageState extends State<LoginPage> {
                                     ? const SizedBox(
                                         width: 18,
                                         height: 18,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                        ),
+                                        child: CircularProgressIndicator(strokeWidth: 2),
                                       )
                                     : const Icon(Icons.login_rounded),
-                                label: Text(
-                                  carregando ? 'Entrando...' : 'Entrar no app',
-                                ),
+                                label: Text(carregando ? 'Entrando...' : 'Entrar no app'),
                               ),
                             ),
                           ],
@@ -458,7 +475,6 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
-
 class HomePage extends StatefulWidget {
   final String nomeUsuario;
   final String nomeObra;
@@ -490,10 +506,8 @@ class _HomePageState extends State<HomePage> {
   String filtroPeriodo = 'TODOS';
   String ordenacao = 'RECENTES';
   String? obraSelecionada;
-  int? obraSelecionadaId;
   int limiteSincronizacao = 50;
   List<dynamic> diarios = [];
-  List<LocalObra> obrasLocais = [];
 
   @override
   void initState() {
@@ -515,8 +529,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   bool get obraFoiSelecionada {
-    return obraSelecionadaId != null ||
-        (obraSelecionada != null && obraSelecionada!.trim().isNotEmpty);
+    return obraSelecionada != null && obraSelecionada!.trim().isNotEmpty;
   }
 
   List<Map<String, dynamic>> get diariosDaObraSelecionada {
@@ -525,12 +538,6 @@ class _HomePageState extends State<HomePage> {
     }
 
     return diariosBase.where((diario) {
-      final id = obraIdDoDiario(diario);
-
-      if (obraSelecionadaId != null && id != null) {
-        return id == obraSelecionadaId;
-      }
-
       return nomeObraDoDiario(diario) == obraSelecionada;
     }).toList();
   }
@@ -592,9 +599,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Map<String, int> get resumoStatus {
-    final base = obraFoiSelecionada
-        ? diariosDaObraSelecionada
-        : <Map<String, dynamic>>[];
+    final base = obraFoiSelecionada ? diariosDaObraSelecionada : <Map<String, dynamic>>[];
 
     final resumo = {
       'TODOS': base.length,
@@ -614,31 +619,18 @@ class _HomePageState extends State<HomePage> {
     return resumo;
   }
 
-  List<Map<String, dynamic>> get obrasDisponiveis {
-    if (obrasLocais.isNotEmpty) {
-      return obrasLocais
-          .map((obra) => {'id': obra.id, 'nome': obra.nome})
-          .toList()
-        ..sort((a, b) => a['nome'].toString().compareTo(b['nome'].toString()));
-    }
-
-    final porNome = <String, Map<String, dynamic>>{};
-    int idTemporario = -1;
+  List<String> get obrasDisponiveis {
+    final nomes = <String>{};
 
     for (final diario in diariosBase) {
       final nome = nomeObraDoDiario(diario);
-      final id = obraIdDoDiario(diario);
 
-      if (nome.trim().isEmpty || nome == 'Obra não informada') {
-        continue;
+      if (nome.trim().isNotEmpty && nome != 'Obra não informada') {
+        nomes.add(nome);
       }
-
-      porNome[nome] = {'id': id ?? idTemporario--, 'nome': nome};
     }
 
-    final lista = porNome.values.toList()
-      ..sort((a, b) => a['nome'].toString().compareTo(b['nome'].toString()));
-
+    final lista = nomes.toList()..sort();
     return lista;
   }
 
@@ -670,70 +662,13 @@ class _HomePageState extends State<HomePage> {
     return 'Obra não informada';
   }
 
-  int? obraIdDoDiario(Map<String, dynamic> diario) {
-    final direto = diario['obra_id'];
-
-    if (direto is int) {
-      return direto;
-    }
-
-    final diretoParseado = int.tryParse(direto?.toString() ?? '');
-
-    if (diretoParseado != null) {
-      return diretoParseado;
-    }
-
-    final obra = diario['obra'];
-
-    if (obra is Map) {
-      final id = obra['id'];
-
-      if (id is int) {
-        return id;
-      }
-
-      return int.tryParse(id?.toString() ?? '');
-    }
-
-    return null;
+  String labelObraSelecionada(String obra) {
+    return obra;
   }
 
-  String labelObraSelecionada(Map<String, dynamic> obra) {
-    return obra['nome']?.toString() ?? 'Obra sem nome';
-  }
-
-  int? idObraOpcao(Map<String, dynamic> obra) {
-    final id = obra['id'];
-
-    if (id is int) {
-      return id;
-    }
-
-    return int.tryParse(id?.toString() ?? '');
-  }
-
-  String? nomeDaObraSelecionada() {
-    if (obraSelecionada != null && obraSelecionada!.trim().isNotEmpty) {
-      return obraSelecionada;
-    }
-
-    if (obraSelecionadaId == null) {
-      return null;
-    }
-
-    for (final obra in obrasDisponiveis) {
-      if (idObraOpcao(obra) == obraSelecionadaId) {
-        return labelObraSelecionada(obra);
-      }
-    }
-
-    return null;
-  }
-
-  void selecionarObra(Map<String, dynamic> obra) {
+  void selecionarObra(String obra) {
     setState(() {
-      obraSelecionadaId = idObraOpcao(obra);
-      obraSelecionada = labelObraSelecionada(obra);
+      obraSelecionada = obra;
     });
   }
 
@@ -864,14 +799,18 @@ class _HomePageState extends State<HomePage> {
 
     if (mostrarMensagem && enviados > 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$enviados diário(s) pendente(s) enviado(s).')),
+        SnackBar(
+          content: Text('$enviados diário(s) pendente(s) enviado(s).'),
+        ),
       );
     }
 
     return enviados;
   }
 
-  Future<void> carregarDiarios({bool tentarEnviarPendentes = false}) async {
+  Future<void> carregarDiarios({
+    bool tentarEnviarPendentes = false,
+  }) async {
     setState(() {
       carregando = true;
       erro = null;
@@ -880,14 +819,6 @@ class _HomePageState extends State<HomePage> {
     try {
       ultimaSincronizacao = await authService.buscarUltimaSincronizacao();
       await atualizarContadorPendentes();
-
-      final obrasAntesSync = await authService.listarObrasLocais();
-
-      if (mounted) {
-        setState(() {
-          obrasLocais = obrasAntesSync;
-        });
-      }
 
       if (tentarEnviarPendentes) {
         await enviarPendentesAutomaticamente();
@@ -912,7 +843,6 @@ class _HomePageState extends State<HomePage> {
       if (diariosLocais.isNotEmpty && mounted) {
         setState(() {
           diarios = diariosLocais;
-          obrasLocais = obrasAntesSync;
           usandoDadosLocais = true;
           carregando = false;
         });
@@ -934,22 +864,13 @@ class _HomePageState extends State<HomePage> {
 
       if (resposta['ok'] == true) {
         final listaApi = resposta['diarios'] as List<dynamic>? ?? [];
-        final obrasDepoisSync = await authService.listarObrasLocais();
 
         setState(() {
           diarios = listaApi;
-          obrasLocais = obrasDepoisSync;
           usandoDadosLocais = false;
           ultimaSincronizacao = DateTime.now().toIso8601String();
           carregando = false;
           erro = null;
-
-          if (obraSelecionadaId != null &&
-              obrasLocais.isNotEmpty &&
-              !obrasLocais.any((obra) => obra.id == obraSelecionadaId)) {
-            obraSelecionadaId = null;
-            obraSelecionada = null;
-          }
         });
 
         await atualizarContadorPendentes();
@@ -972,7 +893,9 @@ class _HomePageState extends State<HomePage> {
 
       if (diarios.isNotEmpty && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppErrorHandler.mensagemModoOffline(e))),
+          SnackBar(
+            content: Text(AppErrorHandler.mensagemModoOffline(e)),
+          ),
         );
       }
     } catch (_) {
@@ -991,9 +914,11 @@ class _HomePageState extends State<HomePage> {
 
     if (!mounted) return;
 
-    Navigator.of(
-      context,
-    ).pushReplacement(MaterialPageRoute(builder: (_) => const LoginPage()));
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => const LoginPage(),
+      ),
+    );
   }
 
   Future<void> abrirConfiguracoes() async {
@@ -1023,17 +948,10 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> abrirNovoDiarioOffline() async {
-    final nomeObra = nomeDaObraSelecionada();
-
-    if (!obraFoiSelecionada ||
-        obraSelecionadaId == null ||
-        nomeObra == null ||
-        nomeObra.trim().isEmpty) {
+    if (!obraFoiSelecionada || obraSelecionada == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Selecione uma obra vinculada antes de criar um diário offline.',
-          ),
+          content: Text('Selecione uma obra antes de criar um diário offline.'),
         ),
       );
       return;
@@ -1042,8 +960,7 @@ class _HomePageState extends State<HomePage> {
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => NovoDiarioOfflinePage(
-          obraId: obraSelecionadaId,
-          obraNome: nomeObra,
+          obraNome: obraSelecionada!,
         ),
       ),
     );
@@ -1056,9 +973,11 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> abrirPendentesOffline() async {
-    await Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => const PendentesOfflinePage()));
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const PendentesOfflinePage(),
+      ),
+    );
 
     if (!mounted) {
       return;
@@ -1066,6 +985,7 @@ class _HomePageState extends State<HomePage> {
 
     await carregarDiarios(tentarEnviarPendentes: true);
   }
+
 
   int totalPendenciasHome() {
     final pendentesLocais = resumoStatus['PENDENTE'] ?? 0;
@@ -1075,9 +995,11 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> abrirCentralPendencias() async {
-    await Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => const CentralPendenciasPage()));
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const CentralPendenciasPage(),
+      ),
+    );
 
     if (!mounted) {
       return;
@@ -1210,7 +1132,9 @@ class _HomePageState extends State<HomePage> {
             color: filtroStatus == status ? null : Colors.white,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
-              color: filtroStatus == status ? color : const Color(0xFFE2E8F0),
+              color: filtroStatus == status
+                  ? color
+                  : const Color(0xFFE2E8F0),
             ),
             boxShadow: const [
               BoxShadow(
@@ -1304,7 +1228,11 @@ class _HomePageState extends State<HomePage> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 18, color: selecionado ? Colors.white : color),
+              Icon(
+                icon,
+                size: 18,
+                color: selecionado ? Colors.white : color,
+              ),
               const SizedBox(width: 8),
               Text(
                 label,
@@ -1433,12 +1361,13 @@ class _HomePageState extends State<HomePage> {
     return urls.toList();
   }
 
+
   Widget homeHeroCard(int totalFiltrado) {
     final online = !usandoDadosLocais;
     final destaque = obraFoiSelecionada
         ? (termoBusca.trim().isEmpty && filtroStatus == 'TODOS'
-              ? '${diariosDaObraSelecionada.length} diário(s) nesta obra'
-              : '$totalFiltrado resultado(s) encontrados')
+            ? '${diariosDaObraSelecionada.length} diário(s) nesta obra'
+            : '$totalFiltrado resultado(s) encontrados')
         : 'Selecione uma obra para começar';
 
     return Container(
@@ -1623,16 +1552,11 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 5,
-                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
                             color: statusColor.withOpacity(0.12),
                             borderRadius: BorderRadius.circular(999),
-                            border: Border.all(
-                              color: statusColor.withOpacity(0.30),
-                            ),
+                            border: Border.all(color: statusColor.withOpacity(0.30)),
                           ),
                           child: Text(
                             texto(item['status_aprovacao'], padrao: status),
@@ -1670,7 +1594,10 @@ class _HomePageState extends State<HomePage> {
                       nomeObraDoDiario(item),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: AppUI.muted, fontSize: 12),
+                      style: const TextStyle(
+                        color: AppUI.muted,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
@@ -1707,10 +1634,7 @@ class _HomePageState extends State<HomePage> {
                   right: 1,
                   top: -2,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: AppUI.red,
                       borderRadius: BorderRadius.circular(999),
@@ -1763,7 +1687,10 @@ class _HomePageState extends State<HomePage> {
                   children: [
                     const Row(
                       children: [
-                        Icon(Icons.business_outlined, color: Color(0xFF1D4ED8)),
+                        Icon(
+                          Icons.business_outlined,
+                          color: Color(0xFF1D4ED8),
+                        ),
                         SizedBox(width: 8),
                         Text(
                           'Obra em consulta',
@@ -1775,14 +1702,10 @@ class _HomePageState extends State<HomePage> {
                       ],
                     ),
                     const SizedBox(height: 10),
-                    DropdownButtonFormField<int>(
-                      value:
-                          obraSelecionadaId != null &&
-                              obras.any(
-                                (obra) =>
-                                    idObraOpcao(obra) == obraSelecionadaId,
-                              )
-                          ? obraSelecionadaId
+                    DropdownButtonFormField<String>(
+                      value: obraSelecionada != null &&
+                              obras.contains(obraSelecionada)
+                          ? obraSelecionada
                           : null,
                       decoration: InputDecoration(
                         labelText: 'Selecione uma obra para consultar',
@@ -1793,30 +1716,21 @@ class _HomePageState extends State<HomePage> {
                         fillColor: const Color(0xFFF8FAFC),
                       ),
                       hint: const Text('Nenhuma obra selecionada'),
-                      items: obras
-                          .map((obra) {
-                            final id = idObraOpcao(obra);
-
-                            return DropdownMenuItem<int>(
-                              value: id,
-                              child: Text(
-                                labelObraSelecionada(obra),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            );
-                          })
-                          .where((item) => item.value != null)
-                          .toList(),
+                      items: obras.map((obra) {
+                        return DropdownMenuItem<String>(
+                          value: obra,
+                          child: Text(
+                            labelObraSelecionada(obra),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        );
+                      }).toList(),
                       onChanged: (valor) {
                         if (valor == null) {
                           return;
                         }
 
-                        final obra = obras.firstWhere(
-                          (item) => idObraOpcao(item) == valor,
-                        );
-
-                        selecionarObra(obra);
+                        selecionarObra(valor);
                       },
                     ),
                     const SizedBox(height: 8),
@@ -1844,7 +1758,10 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       const Row(
                         children: [
-                          Icon(Icons.edit_document, color: Color(0xFF1D4ED8)),
+                          Icon(
+                            Icons.edit_document,
+                            color: Color(0xFF1D4ED8),
+                          ),
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -1860,7 +1777,10 @@ class _HomePageState extends State<HomePage> {
                       const SizedBox(height: 8),
                       const Text(
                         'Preencha e salve o diário. Se estiver sem conexão, ele ficará pendente de envio.',
-                        style: TextStyle(color: Color(0xFF64748B), height: 1.3),
+                        style: TextStyle(
+                          color: Color(0xFF64748B),
+                          height: 1.3,
+                        ),
                       ),
                       const SizedBox(height: 12),
                       Row(
@@ -1890,8 +1810,7 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ],
                       ),
-                      if (totalPendentesLocais > 0 ||
-                          enviandoPendentesAuto) ...[
+                      if (totalPendentesLocais > 0 || enviandoPendentesAuto) ...[
                         const SizedBox(height: 12),
                         Container(
                           width: double.infinity,
@@ -2012,9 +1931,12 @@ class _HomePageState extends State<HomePage> {
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
-                  children: ['TODOS', 'PENDENTE', 'APROVADO', 'DEVOLVIDO'].map((
-                    status,
-                  ) {
+                  children: [
+                    'TODOS',
+                    'PENDENTE',
+                    'APROVADO',
+                    'DEVOLVIDO',
+                  ].map((status) {
                     final selecionado = filtroStatus == status;
                     final color = corStatusCard(status);
 
@@ -2040,9 +1962,12 @@ class _HomePageState extends State<HomePage> {
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
-                  children: ['TODOS', '7_DIAS', '30_DIAS', '90_DIAS'].map((
-                    periodo,
-                  ) {
+                  children: [
+                    'TODOS',
+                    '7_DIAS',
+                    '30_DIAS',
+                    '90_DIAS',
+                  ].map((periodo) {
                     final selecionado = filtroPeriodo == periodo;
 
                     return filtroChipModerno(
@@ -2113,7 +2038,10 @@ class _HomePageState extends State<HomePage> {
                         size: 42,
                       ),
                       const SizedBox(height: 12),
-                      Text(erro!, textAlign: TextAlign.center),
+                      Text(
+                        erro!,
+                        textAlign: TextAlign.center,
+                      ),
                       const SizedBox(height: 12),
                       FilledButton.icon(
                         onPressed: carregarDiarios,
@@ -2130,9 +2058,7 @@ class _HomePageState extends State<HomePage> {
               const Card(
                 child: Padding(
                   padding: EdgeInsets.all(18),
-                  child: Text(
-                    'Nenhum diário encontrado para a obra selecionada.',
-                  ),
+                  child: Text('Nenhum diário encontrado para a obra selecionada.'),
                 ),
               )
             else if (filtrados.isEmpty)
@@ -2159,10 +2085,7 @@ class _HomePageState extends State<HomePage> {
                           limparBusca();
                           selecionarFiltroStatus('TODOS');
                           selecionarFiltroPeriodo('TODOS');
-                          setState(() {
-                            obraSelecionada = null;
-                            obraSelecionadaId = null;
-                          });
+                          setState(() { obraSelecionada = null; });
                         },
                         icon: const Icon(Icons.close),
                         label: const Text('Limpar filtros'),
@@ -2179,6 +2102,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
+
 
 class CentralPendenciasPage extends StatefulWidget {
   const CentralPendenciasPage({super.key});
@@ -2308,8 +2232,7 @@ class _CentralPendenciasPageState extends State<CentralPendenciasPage> {
       return valor;
     }
 
-    return int.tryParse(valor?.toString() ?? '') ??
-        listaCategoria(chave).length;
+    return int.tryParse(valor?.toString() ?? '') ?? listaCategoria(chave).length;
   }
 
   String texto(dynamic valor, {String padrao = '-'}) {
@@ -2347,10 +2270,7 @@ class _CentralPendenciasPageState extends State<CentralPendenciasPage> {
       }
     }
 
-    return texto(
-      diario['obra_nome'] ?? diario['nome_obra'],
-      padrao: 'Obra não informada',
-    );
+    return texto(diario['obra_nome'] ?? diario['nome_obra'], padrao: 'Obra não informada');
   }
 
   String motivoPendencia(String chave, Map<String, dynamic> diario) {
@@ -2446,14 +2366,19 @@ class _CentralPendenciasPageState extends State<CentralPendenciasPage> {
           decoration: BoxDecoration(
             gradient: selecionado
                 ? LinearGradient(
-                    colors: [color, color.withOpacity(0.78)],
+                    colors: [
+                      color,
+                      color.withOpacity(0.78),
+                    ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   )
                 : null,
             color: selecionado ? null : Colors.white,
             borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: selecionado ? color : AppUI.border),
+            border: Border.all(
+              color: selecionado ? color : AppUI.border,
+            ),
             boxShadow: selecionado
                 ? [
                     BoxShadow(
@@ -2473,7 +2398,10 @@ class _CentralPendenciasPageState extends State<CentralPendenciasPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, color: selecionado ? Colors.white : color),
+              Icon(
+                icon,
+                color: selecionado ? Colors.white : color,
+              ),
               const SizedBox(height: 12),
               Text(
                 total.toString(),
@@ -2497,9 +2425,7 @@ class _CentralPendenciasPageState extends State<CentralPendenciasPage> {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: selecionado
-                      ? Colors.white.withOpacity(0.86)
-                      : AppUI.muted,
+                  color: selecionado ? Colors.white.withOpacity(0.86) : AppUI.muted,
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
                 ),
@@ -2513,7 +2439,9 @@ class _CentralPendenciasPageState extends State<CentralPendenciasPage> {
 
   Future<void> abrirDiario(Map<String, dynamic> diario) async {
     final atualizou = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(builder: (_) => DiarioDetalhePage(diario: diario)),
+      MaterialPageRoute(
+        builder: (_) => DiarioDetalhePage(diario: diario),
+      ),
     );
 
     if (atualizou == true && mounted) {
@@ -2594,9 +2522,9 @@ class _CentralPendenciasPageState extends State<CentralPendenciasPage> {
     } catch (erro) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(mensagemErroRevisaoEdicao(erro))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(mensagemErroRevisaoEdicao(erro))),
+      );
     }
   }
 
@@ -2640,7 +2568,9 @@ class _CentralPendenciasPageState extends State<CentralPendenciasPage> {
               },
               icon: const Icon(Icons.close),
               label: const Text('Rejeitar'),
-              style: FilledButton.styleFrom(backgroundColor: AppUI.red),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppUI.red,
+              ),
             ),
           ],
         );
@@ -2652,7 +2582,10 @@ class _CentralPendenciasPageState extends State<CentralPendenciasPage> {
     }
 
     try {
-      await authService.rejeitarEdicaoDiarioMobile(id, motivo: motivo);
+      await authService.rejeitarEdicaoDiarioMobile(
+        id,
+        motivo: motivo,
+      );
 
       if (!mounted) return;
 
@@ -2664,9 +2597,9 @@ class _CentralPendenciasPageState extends State<CentralPendenciasPage> {
     } catch (erro) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(mensagemErroRevisaoEdicao(erro))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(mensagemErroRevisaoEdicao(erro))),
+      );
     }
   }
 
@@ -2742,7 +2675,9 @@ class _CentralPendenciasPageState extends State<CentralPendenciasPage> {
               onPressed: () => Navigator.of(context).pop(true),
               icon: const Icon(Icons.delete_outline),
               label: const Text('Excluir'),
-              style: FilledButton.styleFrom(backgroundColor: AppUI.red),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppUI.red,
+              ),
             ),
           ],
         );
@@ -2757,18 +2692,16 @@ class _CentralPendenciasPageState extends State<CentralPendenciasPage> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Solicitação de exclusão aprovada. Diário excluído.'),
-        ),
+        const SnackBar(content: Text('Solicitação de exclusão aprovada. Diário excluído.')),
       );
 
       await carregarPendencias();
     } catch (erro) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(mensagemErroRevisaoEdicao(erro))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(mensagemErroRevisaoEdicao(erro))),
+      );
     }
   }
 
@@ -2812,7 +2745,9 @@ class _CentralPendenciasPageState extends State<CentralPendenciasPage> {
               },
               icon: const Icon(Icons.close),
               label: const Text('Rejeitar'),
-              style: FilledButton.styleFrom(backgroundColor: AppUI.red),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppUI.red,
+              ),
             ),
           ],
         );
@@ -2822,7 +2757,10 @@ class _CentralPendenciasPageState extends State<CentralPendenciasPage> {
     if (motivo == null) return;
 
     try {
-      await authService.rejeitarExclusaoDiarioMobile(id, motivo: motivo);
+      await authService.rejeitarExclusaoDiarioMobile(
+        id,
+        motivo: motivo,
+      );
 
       if (!mounted) return;
 
@@ -2834,9 +2772,9 @@ class _CentralPendenciasPageState extends State<CentralPendenciasPage> {
     } catch (erro) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(mensagemErroRevisaoEdicao(erro))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(mensagemErroRevisaoEdicao(erro))),
+      );
     }
   }
 
@@ -2917,7 +2855,10 @@ class _CentralPendenciasPageState extends State<CentralPendenciasPage> {
                   color: color.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(17),
                 ),
-                child: Icon(iconeStatus(filtro), color: color),
+                child: Icon(
+                  iconeStatus(filtro),
+                  color: color,
+                ),
               ),
               const SizedBox(width: 13),
               Expanded(
@@ -2962,15 +2903,11 @@ class _CentralPendenciasPageState extends State<CentralPendenciasPage> {
                           chipInfo('EXCLUSÃO SOLICITADA', AppUI.red)
                         else
                           chipInfo(
-                            diario['status_aprovacao']?.toString() ??
-                                'PENDENTE',
+                            diario['status_aprovacao']?.toString() ?? 'PENDENTE',
                             color,
                           ),
                         if (texto(diario['equipe'], padrao: '').isNotEmpty)
-                          chipInfo(
-                            'Equipe: ${texto(diario['equipe'])}',
-                            AppUI.blue,
-                          ),
+                          chipInfo('Equipe: ${texto(diario['equipe'])}', AppUI.blue),
                       ],
                     ),
                     botoesAcaoEdicao(diario),
@@ -2998,7 +2935,11 @@ class _CentralPendenciasPageState extends State<CentralPendenciasPage> {
       ),
       child: const Column(
         children: [
-          Icon(Icons.task_alt_outlined, color: AppUI.green, size: 46),
+          Icon(
+            Icons.task_alt_outlined,
+            color: AppUI.green,
+            size: 46,
+          ),
           SizedBox(height: 12),
           Text(
             'Nada pendente aqui',
@@ -3012,7 +2953,10 @@ class _CentralPendenciasPageState extends State<CentralPendenciasPage> {
           Text(
             'Quando houver algo para revisar, aparecerá nesta central.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: AppUI.muted, fontWeight: FontWeight.w700),
+            style: TextStyle(
+              color: AppUI.muted,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ],
       ),
@@ -3097,7 +3041,10 @@ class _CentralPendenciasPageState extends State<CentralPendenciasPage> {
                         size: 42,
                       ),
                       const SizedBox(height: 12),
-                      Text(erro!, textAlign: TextAlign.center),
+                      Text(
+                        erro!,
+                        textAlign: TextAlign.center,
+                      ),
                       const SizedBox(height: 12),
                       FilledButton.icon(
                         onPressed: carregarPendencias,
@@ -3111,10 +3058,15 @@ class _CentralPendenciasPageState extends State<CentralPendenciasPage> {
             else ...[
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                child: Row(children: categorias.map(cardCategoria).toList()),
+                child: Row(
+                  children: categorias.map(cardCategoria).toList(),
+                ),
               ),
               const SizedBox(height: 16),
-              if (lista.isEmpty) emptyState() else ...lista.map(cardPendencia),
+              if (lista.isEmpty)
+                emptyState()
+              else
+                ...lista.map(cardPendencia),
             ],
           ],
         ),
@@ -3122,6 +3074,7 @@ class _CentralPendenciasPageState extends State<CentralPendenciasPage> {
     );
   }
 }
+
 
 class DiarioDetalhePage extends StatelessWidget {
   final Map<String, dynamic> diario;
@@ -3256,16 +3209,25 @@ class DiarioDetalhePage extends StatelessWidget {
     final color = corStatus(status);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 8,
+      ),
       decoration: BoxDecoration(
         color: color.withOpacity(0.20),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withOpacity(0.22)),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.22),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(iconeStatus(status), size: 18, color: Colors.white),
+          Icon(
+            iconeStatus(status),
+            size: 18,
+            color: Colors.white,
+          ),
           const SizedBox(width: 6),
           Text(
             status,
@@ -3280,18 +3242,30 @@ class DiarioDetalhePage extends StatelessWidget {
     );
   }
 
-  Widget chipVidro({required IconData icon, required String label}) {
+  Widget chipVidro({
+    required IconData icon,
+    required String label,
+  }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 8,
+      ),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.12),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withOpacity(0.18)),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.18),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 17, color: Colors.white),
+          Icon(
+            icon,
+            size: 17,
+            color: Colors.white,
+          ),
           const SizedBox(width: 6),
           Text(
             label,
@@ -3318,7 +3292,9 @@ class DiarioDetalhePage extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: borda),
+          border: Border.all(
+            color: borda,
+          ),
           boxShadow: const [
             BoxShadow(
               color: Color(0x0A000000),
@@ -3336,7 +3312,11 @@ class DiarioDetalhePage extends StatelessWidget {
                 color: color.withOpacity(0.12),
                 borderRadius: BorderRadius.circular(15),
               ),
-              child: Icon(icon, color: color, size: 23),
+              child: Icon(
+                icon,
+                color: color,
+                size: 23,
+              ),
             ),
             const SizedBox(height: 9),
             Text(
@@ -3376,7 +3356,9 @@ class DiarioDetalhePage extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: borda),
+        border: Border.all(
+          color: borda,
+        ),
         boxShadow: const [
           BoxShadow(
             color: Color(0x0C000000),
@@ -3397,7 +3379,10 @@ class DiarioDetalhePage extends StatelessWidget {
                   color: color.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(15),
                 ),
-                child: Icon(icon, color: color),
+                child: Icon(
+                  icon,
+                  color: color,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -3449,7 +3434,11 @@ class DiarioDetalhePage extends StatelessWidget {
       child: Row(
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 18, color: azul),
+            Icon(
+              icon,
+              size: 18,
+              color: azul,
+            ),
             const SizedBox(width: 9),
           ],
           Expanded(
@@ -3510,7 +3499,11 @@ class DiarioDetalhePage extends StatelessWidget {
               color: color.withOpacity(0.12),
               borderRadius: BorderRadius.circular(15),
             ),
-            child: Icon(icon, color: color, size: 22),
+            child: Icon(
+              icon,
+              color: color,
+              size: 22,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -3560,7 +3553,11 @@ class DiarioDetalhePage extends StatelessWidget {
       ),
       child: Column(
         children: [
-          const Icon(Icons.info_outline, color: textoFraco, size: 30),
+          const Icon(
+            Icons.info_outline,
+            color: textoFraco,
+            size: 30,
+          ),
           const SizedBox(height: 8),
           Text(
             texto,
@@ -3575,17 +3572,16 @@ class DiarioDetalhePage extends StatelessWidget {
     );
   }
 
-  Widget textoObservacao(
-    String conteudo, {
-    Color color = const Color(0xFF92400E),
-  }) {
+  Widget textoObservacao(String conteudo, {Color color = const Color(0xFF92400E)}) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: color.withOpacity(0.08),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: color.withOpacity(0.24)),
+        border: Border.all(
+          color: color.withOpacity(0.24),
+        ),
       ),
       child: Text(
         conteudo,
@@ -3597,6 +3593,7 @@ class DiarioDetalhePage extends StatelessWidget {
       ),
     );
   }
+
 
   bool get usuarioEhApontador {
     return nivelUsuario.trim().toLowerCase() == 'apontador';
@@ -3685,7 +3682,9 @@ class DiarioDetalhePage extends StatelessWidget {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Diário aprovado com sucesso.')),
+        const SnackBar(
+          content: Text('Diário aprovado com sucesso.'),
+        ),
       );
 
       Navigator.of(context).pop(true);
@@ -3694,9 +3693,9 @@ class DiarioDetalhePage extends StatelessWidget {
         return;
       }
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(mensagemErroAcao(erro))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(mensagemErroAcao(erro))),
+      );
     }
   }
 
@@ -3736,9 +3735,7 @@ class DiarioDetalhePage extends StatelessWidget {
                 final texto = motivoController.text.trim();
 
                 if (texto.isEmpty) {
-                  Navigator.of(
-                    context,
-                  ).pop('Registro devolvido para correção.');
+                  Navigator.of(context).pop('Registro devolvido para correção.');
                   return;
                 }
 
@@ -3746,7 +3743,9 @@ class DiarioDetalhePage extends StatelessWidget {
               },
               icon: const Icon(Icons.assignment_return_outlined),
               label: const Text('Devolver'),
-              style: FilledButton.styleFrom(backgroundColor: Color(0xFFF97316)),
+              style: FilledButton.styleFrom(
+                backgroundColor: Color(0xFFF97316),
+              ),
             ),
           ],
         );
@@ -3758,7 +3757,10 @@ class DiarioDetalhePage extends StatelessWidget {
     }
 
     try {
-      await AuthService().devolverDiarioMobile(id, motivo: motivo);
+      await AuthService().devolverDiarioMobile(
+        id,
+        motivo: motivo,
+      );
 
       await AuthService().sync(limite: 300);
 
@@ -3767,7 +3769,9 @@ class DiarioDetalhePage extends StatelessWidget {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Diário devolvido para correção.')),
+        const SnackBar(
+          content: Text('Diário devolvido para correção.'),
+        ),
       );
 
       Navigator.of(context).pop(true);
@@ -3776,9 +3780,9 @@ class DiarioDetalhePage extends StatelessWidget {
         return;
       }
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(mensagemErroAcao(erro))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(mensagemErroAcao(erro))),
+      );
     }
   }
 
@@ -3833,9 +3837,7 @@ class DiarioDetalhePage extends StatelessWidget {
 
                 if (texto.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Informe o motivo da solicitação.'),
-                    ),
+                    const SnackBar(content: Text('Informe o motivo da solicitação.')),
                   );
                   return;
                 }
@@ -3871,7 +3873,10 @@ class DiarioDetalhePage extends StatelessWidget {
     if (motivo == null) return;
 
     try {
-      await AuthService().solicitarEdicaoDiarioMobile(id, motivo: motivo);
+      await AuthService().solicitarEdicaoDiarioMobile(
+        id,
+        motivo: motivo,
+      );
 
       await AuthService().sync(limite: 300);
 
@@ -3885,9 +3890,9 @@ class DiarioDetalhePage extends StatelessWidget {
     } catch (erro) {
       if (!context.mounted) return;
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(mensagemErroAcao(erro))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(mensagemErroAcao(erro))),
+      );
     }
   }
 
@@ -3936,7 +3941,10 @@ class DiarioDetalhePage extends StatelessWidget {
     if (confirmou != true) return;
 
     try {
-      await AuthService().solicitarExclusaoDiarioMobile(id, motivo: motivo);
+      await AuthService().solicitarExclusaoDiarioMobile(
+        id,
+        motivo: motivo,
+      );
 
       await AuthService().sync(limite: 300);
 
@@ -3950,9 +3958,9 @@ class DiarioDetalhePage extends StatelessWidget {
     } catch (erro) {
       if (!context.mounted) return;
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(mensagemErroAcao(erro))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(mensagemErroAcao(erro))),
+      );
     }
   }
 
@@ -3988,7 +3996,10 @@ class DiarioDetalhePage extends StatelessWidget {
                   color: azul.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(15),
                 ),
-                child: const Icon(Icons.outgoing_mail, color: azul),
+                child: const Icon(
+                  Icons.outgoing_mail,
+                  color: azul,
+                ),
               ),
               const SizedBox(width: 12),
               const Expanded(
@@ -4092,7 +4103,10 @@ class DiarioDetalhePage extends StatelessWidget {
                   color: azul.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(15),
                 ),
-                child: const Icon(Icons.verified_outlined, color: azul),
+                child: const Icon(
+                  Icons.verified_outlined,
+                  color: azul,
+                ),
               ),
               const SizedBox(width: 12),
               const Expanded(
@@ -4235,7 +4249,11 @@ class DiarioDetalhePage extends StatelessWidget {
             padding: const EdgeInsets.all(22),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [azulEscuro, azul, statusColor],
+                colors: [
+                  azulEscuro,
+                  azul,
+                  statusColor,
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -4337,8 +4355,7 @@ class DiarioDetalhePage extends StatelessWidget {
                     ),
                     chipVidro(
                       icon: Icons.route_outlined,
-                      label:
-                          'KM ${texto(diario['km_inicial'])} → ${texto(diario['km_final'])}',
+                      label: 'KM ${texto(diario['km_inicial'])} → ${texto(diario['km_final'])}',
                     ),
                   ],
                 ),
@@ -4358,10 +4375,7 @@ class DiarioDetalhePage extends StatelessWidget {
               numeroCard(
                 icon: Icons.groups_outlined,
                 titulo: 'Pessoal',
-                valor: texto(
-                  diario['total_pessoal'],
-                  padrao: '${maoObra.length + maoObraIndireta.length}',
-                ),
+                valor: texto(diario['total_pessoal'], padrao: '${maoObra.length + maoObraIndireta.length}'),
                 color: const Color(0xFF0F766E),
               ),
               const SizedBox(width: 10),
@@ -4381,42 +4395,14 @@ class DiarioDetalhePage extends StatelessWidget {
             subtitulo: 'Dados gerais do lançamento',
             icon: Icons.dashboard_outlined,
             children: [
-              linhaInfo(
-                'Contrato/obra',
-                obra['nome'] ?? diario['obra_nome'],
-                icon: Icons.business_outlined,
-              ),
-              linhaInfo(
-                'Equipe',
-                diario['equipe'],
-                icon: Icons.groups_outlined,
-              ),
-              linhaInfo(
-                'Condição operacional',
-                diario['condicao_operacao'] ?? diario['condicao_via'],
-                icon: Icons.fact_check_outlined,
-              ),
-              linhaInfo(
-                'Hora entrada',
-                diario['hora_entrada'],
-                icon: Icons.login,
-              ),
+              linhaInfo('Contrato/obra', obra['nome'] ?? diario['obra_nome'], icon: Icons.business_outlined),
+              linhaInfo('Equipe', diario['equipe'], icon: Icons.groups_outlined),
+              linhaInfo('Condição operacional', diario['condicao_operacao'] ?? diario['condicao_via'], icon: Icons.fact_check_outlined),
+              linhaInfo('Hora entrada', diario['hora_entrada'], icon: Icons.login),
               linhaInfo('Hora saída', diario['hora_saida'], icon: Icons.logout),
-              linhaInfo(
-                'KM inicial',
-                diario['km_inicial'],
-                icon: Icons.start_outlined,
-              ),
-              linhaInfo(
-                'KM final',
-                diario['km_final'],
-                icon: Icons.flag_outlined,
-              ),
-              linhaInfo(
-                'Distância',
-                diario['distancia_total_formatada'],
-                icon: Icons.route_outlined,
-              ),
+              linhaInfo('KM inicial', diario['km_inicial'], icon: Icons.start_outlined),
+              linhaInfo('KM final', diario['km_final'], icon: Icons.flag_outlined),
+              linhaInfo('Distância', diario['distancia_total_formatada'], icon: Icons.route_outlined),
             ],
           ),
           secaoPremium(
@@ -4425,28 +4411,11 @@ class DiarioDetalhePage extends StatelessWidget {
             icon: Icons.health_and_safety_outlined,
             color: const Color(0xFF0891B2),
             children: [
-              linhaInfo(
-                'Clima manhã',
-                diario['clima_manha'] ?? diario['clima'],
-                icon: Icons.wb_sunny_outlined,
-              ),
-              linhaInfo(
-                'Clima tarde',
-                diario['clima_tarde'],
-                icon: Icons.cloud_outlined,
-              ),
-              linhaInfo(
-                'Acidente',
-                diario['acidente'] ??
-                    (diario['houve_acidente'] == true ? 'Houve' : 'Não houve'),
-                icon: Icons.warning_amber_outlined,
-              ),
+              linhaInfo('Clima manhã', diario['clima_manha'] ?? diario['clima'], icon: Icons.wb_sunny_outlined),
+              linhaInfo('Clima tarde', diario['clima_tarde'], icon: Icons.cloud_outlined),
+              linhaInfo('Acidente', diario['acidente'] ?? (diario['houve_acidente'] == true ? 'Houve' : 'Não houve'), icon: Icons.warning_amber_outlined),
               if (texto(diario['tipo_ocorrencia'], padrao: '').isNotEmpty)
-                linhaInfo(
-                  'Tipo/descrição',
-                  diario['tipo_ocorrencia'],
-                  icon: Icons.report_problem_outlined,
-                ),
+                linhaInfo('Tipo/descrição', diario['tipo_ocorrencia'], icon: Icons.report_problem_outlined),
               textoObservacao(observacoes),
             ],
           ),
@@ -4456,7 +4425,9 @@ class DiarioDetalhePage extends StatelessWidget {
             icon: Icons.construction,
             color: azul,
             children: servicos.isEmpty
-                ? [emptyBox('Nenhum serviço informado.')]
+                ? [
+                    emptyBox('Nenhum serviço informado.'),
+                  ]
                 : servicos.map((item) {
                     final servico = item is Map ? item : {};
                     return itemCard(
@@ -4487,7 +4458,9 @@ class DiarioDetalhePage extends StatelessWidget {
             icon: Icons.inventory_2_outlined,
             color: const Color(0xFFEA580C),
             children: materiais.isEmpty
-                ? [emptyBox('Nenhum material informado.')]
+                ? [
+                    emptyBox('Nenhum material informado.'),
+                  ]
                 : materiais.map((item) {
                     final mat = item is Map ? item : {};
                     return itemCard(
@@ -4511,7 +4484,9 @@ class DiarioDetalhePage extends StatelessWidget {
             icon: Icons.precision_manufacturing_outlined,
             color: const Color(0xFF7C3AED),
             children: equipamentos.isEmpty
-                ? [emptyBox('Nenhum equipamento informado.')]
+                ? [
+                    emptyBox('Nenhum equipamento informado.'),
+                  ]
                 : equipamentos.map((item) {
                     final eq = item is Map ? item : {};
                     return itemCard(
@@ -4532,14 +4507,18 @@ class DiarioDetalhePage extends StatelessWidget {
             icon: Icons.groups,
             color: const Color(0xFF0F766E),
             children: maoObra.isEmpty
-                ? [emptyBox('Nenhuma mão de obra direta informada.')]
+                ? [
+                    emptyBox('Nenhuma mão de obra direta informada.'),
+                  ]
                 : maoObra.map((item) {
                     final mao = item is Map ? item : {};
                     return itemCard(
                       icon: Icons.person_outline,
                       titulo: texto(mao['funcao'], padrao: 'Função'),
                       color: const Color(0xFF0F766E),
-                      linhas: ['Quantidade: ${texto(mao['quantidade'])}'],
+                      linhas: [
+                        'Quantidade: ${texto(mao['quantidade'])}',
+                      ],
                     );
                   }).toList(),
           ),
@@ -4549,14 +4528,18 @@ class DiarioDetalhePage extends StatelessWidget {
             icon: Icons.supervisor_account_outlined,
             color: const Color(0xFF2563EB),
             children: maoObraIndireta.isEmpty
-                ? [emptyBox('Nenhuma mão de obra indireta informada.')]
+                ? [
+                    emptyBox('Nenhuma mão de obra indireta informada.'),
+                  ]
                 : maoObraIndireta.map((item) {
                     final mao = item is Map ? item : {};
                     return itemCard(
                       icon: Icons.badge_outlined,
                       titulo: texto(mao['funcao'], padrao: 'Função'),
                       color: const Color(0xFF2563EB),
-                      linhas: ['Quantidade: ${texto(mao['quantidade'])}'],
+                      linhas: [
+                        'Quantidade: ${texto(mao['quantidade'])}',
+                      ],
                     );
                   }).toList(),
           ),
@@ -4566,28 +4549,14 @@ class DiarioDetalhePage extends StatelessWidget {
             icon: Icons.verified_user_outlined,
             color: const Color(0xFF475569),
             children: compareceuCampo.isEmpty
-                ? [emptyBox('Nenhuma informação de comparecimento em campo.')]
+                ? [
+                    emptyBox('Nenhuma informação de comparecimento em campo.'),
+                  ]
                 : [
-                    linhaInfo(
-                      'Inspetor de campo',
-                      compareceuCampo['inspetor_campo'],
-                      icon: Icons.engineering_outlined,
-                    ),
-                    linhaInfo(
-                      'Fiscal da supervisora',
-                      compareceuCampo['fiscal_supervisora'],
-                      icon: Icons.manage_accounts_outlined,
-                    ),
-                    linhaInfo(
-                      'Fiscal do DNIT',
-                      compareceuCampo['fiscal_dnit'],
-                      icon: Icons.account_balance_outlined,
-                    ),
-                    linhaInfo(
-                      'Engenheiro',
-                      compareceuCampo['engenheiro'],
-                      icon: Icons.person_pin_circle_outlined,
-                    ),
+                    linhaInfo('Inspetor de campo', compareceuCampo['inspetor_campo'], icon: Icons.engineering_outlined),
+                    linhaInfo('Fiscal da supervisora', compareceuCampo['fiscal_supervisora'], icon: Icons.manage_accounts_outlined),
+                    linhaInfo('Fiscal do DNIT', compareceuCampo['fiscal_dnit'], icon: Icons.account_balance_outlined),
+                    linhaInfo('Engenheiro', compareceuCampo['engenheiro'], icon: Icons.person_pin_circle_outlined),
                   ],
           ),
           secaoPremium(
@@ -4596,21 +4565,9 @@ class DiarioDetalhePage extends StatelessWidget {
             icon: Icons.traffic_outlined,
             color: const Color(0xFFF97316),
             children: [
-              linhaInfo(
-                'Cone plástico',
-                sinalizacao['cone_plastico'],
-                icon: Icons.traffic,
-              ),
-              linhaInfo(
-                'Placa pare-siga',
-                sinalizacao['placa_pare_siga'],
-                icon: Icons.signpost_outlined,
-              ),
-              linhaInfo(
-                'Cavalete metálico',
-                sinalizacao['cavalete_metalico'],
-                icon: Icons.construction_outlined,
-              ),
+              linhaInfo('Cone plástico', sinalizacao['cone_plastico'], icon: Icons.traffic),
+              linhaInfo('Placa pare-siga', sinalizacao['placa_pare_siga'], icon: Icons.signpost_outlined),
+              linhaInfo('Cavalete metálico', sinalizacao['cavalete_metalico'], icon: Icons.construction_outlined),
             ],
           ),
           secaoPremium(
@@ -4637,10 +4594,15 @@ class DiarioDetalhePage extends StatelessWidget {
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Color(0xFFEEF2FF), Color(0xFFF5F3FF)],
+                      colors: [
+                        Color(0xFFEEF2FF),
+                        Color(0xFFF5F3FF),
+                      ],
                     ),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFFC7D2FE)),
+                    border: Border.all(
+                      color: const Color(0xFFC7D2FE),
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -4668,7 +4630,10 @@ class DiarioDetalhePage extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const Icon(Icons.chevron_right, color: Color(0xFF3730A3)),
+                      const Icon(
+                        Icons.chevron_right,
+                        color: Color(0xFF3730A3),
+                      ),
                     ],
                   ),
                 ),
@@ -4680,6 +4645,8 @@ class DiarioDetalhePage extends StatelessWidget {
     );
   }
 }
+
+
 
 class GaleriaFotosPage extends StatefulWidget {
   final List<dynamic> fotos;
@@ -4762,7 +4729,9 @@ class _GaleriaFotosPageState extends State<GaleriaFotosPage> {
       return Map<String, dynamic>.from(item);
     }
 
-    return {'arquivo': item?.toString() ?? ''};
+    return {
+      'arquivo': item?.toString() ?? '',
+    };
   }
 
   String caminhoFoto(Map<String, dynamic> foto) {
@@ -4931,7 +4900,10 @@ class _GaleriaFotosPageState extends State<GaleriaFotosPage> {
         final salva = snapshot.data == true;
 
         return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 10,
+            vertical: 6,
+          ),
           decoration: BoxDecoration(
             color: salva
                 ? const Color(0xFF166534).withOpacity(0.92)
@@ -4976,12 +4948,18 @@ class _GaleriaFotosPageState extends State<GaleriaFotosPage> {
           children: [
             const Row(
               children: [
-                Icon(Icons.offline_pin_outlined, color: Color(0xFF1D4ED8)),
+                Icon(
+                  Icons.offline_pin_outlined,
+                  color: Color(0xFF1D4ED8),
+                ),
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'Fotos offline',
-                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 16,
+                    ),
                   ),
                 ),
               ],
@@ -4989,7 +4967,10 @@ class _GaleriaFotosPageState extends State<GaleriaFotosPage> {
             const SizedBox(height: 8),
             const Text(
               'Baixe as fotos deste diário enquanto estiver online para consultar depois sem internet.',
-              style: TextStyle(color: Color(0xFF64748B), height: 1.3),
+              style: TextStyle(
+                color: Color(0xFF64748B),
+                height: 1.3,
+              ),
             ),
             const SizedBox(height: 12),
             if (baixandoFotos) ...[
@@ -5063,12 +5044,19 @@ class _GaleriaFotosPageState extends State<GaleriaFotosPage> {
             fit: BoxFit.cover,
             borderRadius: BorderRadius.circular(18),
           ),
-          Positioned(left: 10, top: 10, child: badgeStatusOffline(url)),
+          Positioned(
+            left: 10,
+            top: 10,
+            child: badgeStatusOffline(url),
+          ),
           Positioned(
             right: 10,
             bottom: 10,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 10,
+                vertical: 6,
+              ),
               decoration: BoxDecoration(
                 color: Colors.black.withOpacity(0.58),
                 borderRadius: BorderRadius.circular(999),
@@ -5076,7 +5064,11 @@ class _GaleriaFotosPageState extends State<GaleriaFotosPage> {
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.fullscreen, color: Colors.white, size: 17),
+                  Icon(
+                    Icons.fullscreen,
+                    color: Colors.white,
+                    size: 17,
+                  ),
                   SizedBox(width: 4),
                   Text(
                     'Ampliar',
@@ -5101,7 +5093,9 @@ class _GaleriaFotosPageState extends State<GaleriaFotosPage> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(title: const Text('Galeria de Fotos')),
+      appBar: AppBar(
+        title: const Text('Galeria de Fotos'),
+      ),
       body: ListView(
         controller: scrollController,
         padding: const EdgeInsets.all(18),
@@ -5111,7 +5105,10 @@ class _GaleriaFotosPageState extends State<GaleriaFotosPage> {
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF1E1B4B), Color(0xFF4338CA)],
+                colors: [
+                  Color(0xFF1E1B4B),
+                  Color(0xFF4338CA),
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -5180,7 +5177,9 @@ class _GaleriaFotosPageState extends State<GaleriaFotosPage> {
                     Text(
                       'Nenhuma foto vinculada a este diário.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontWeight: FontWeight.w700),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ],
                 ),
@@ -5298,7 +5297,9 @@ class _GaleriaFotosPageState extends State<GaleriaFotosPage> {
                       child: Text(
                         'Página ${paginaAtual + 1} de $totalPaginas • ${fotosPorPagina} fotos por página',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(fontWeight: FontWeight.w800),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
                     IconButton(
@@ -5423,7 +5424,11 @@ class _FotoTelaCheiaPageState extends State<FotoTelaCheiaPage> {
   Widget imagemAmpliada(String url) {
     if (url.isEmpty) {
       return const Center(
-        child: Icon(Icons.broken_image_outlined, color: Colors.white, size: 64),
+        child: Icon(
+          Icons.broken_image_outlined,
+          color: Colors.white,
+          size: 64,
+        ),
       );
     }
 
@@ -5453,7 +5458,9 @@ class _FotoTelaCheiaPageState extends State<FotoTelaCheiaPage> {
         foregroundColor: Colors.white,
         title: Text(
           'Foto ${indiceAtual + 1} de ${widget.fotos.length}',
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(
+            color: Colors.white,
+          ),
         ),
       ),
       body: Stack(
@@ -5497,9 +5504,8 @@ class _FotoTelaCheiaPageState extends State<FotoTelaCheiaPage> {
             bottom: 0,
             child: Center(
               child: IconButton.filled(
-                onPressed: indiceAtual >= widget.fotos.length - 1
-                    ? null
-                    : irParaProximaFoto,
+                onPressed:
+                    indiceAtual >= widget.fotos.length - 1 ? null : irParaProximaFoto,
                 icon: const Icon(Icons.chevron_right),
                 style: IconButton.styleFrom(
                   backgroundColor: Colors.white.withOpacity(0.18),
@@ -5519,7 +5525,9 @@ class _FotoTelaCheiaPageState extends State<FotoTelaCheiaPage> {
               decoration: BoxDecoration(
                 color: Colors.black.withOpacity(0.62),
                 borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: Colors.white.withOpacity(0.12)),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.12),
+                ),
               ),
               child: Text(
                 tituloFoto(fotoAtual, indiceAtual),
@@ -5539,15 +5547,20 @@ class _FotoTelaCheiaPageState extends State<FotoTelaCheiaPage> {
   }
 }
 
+
+
+
+
+
+
+
 class NovoDiarioOfflinePage extends StatefulWidget {
-  final int? obraId;
   final String obraNome;
   final RascunhosDiario? rascunhoExistente;
 
   const NovoDiarioOfflinePage({
     super.key,
     required this.obraNome,
-    this.obraId,
     this.rascunhoExistente,
   });
 
@@ -5577,11 +5590,6 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
   String climaTardeSelecionado = 'Bom';
   bool houveAcidente = false;
   bool salvando = false;
-  bool carregandoObrasFormulario = false;
-
-  int? obraIdSelecionada;
-  String obraNomeSelecionada = '';
-  List<LocalObra> obrasLocaisFormulario = [];
 
   final List<Map<String, dynamic>> servicos = [];
   final List<Map<String, dynamic>> materiais = [];
@@ -5623,7 +5631,11 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
     'OUTROS',
   ];
 
-  final List<String> opcoesLado = const ['Direito', 'Esquerdo', 'Ambos'];
+  final List<String> opcoesLado = const [
+    'Direito',
+    'Esquerdo',
+    'Ambos',
+  ];
 
   final List<String> opcoesMateriais = const [
     'BRITA CORRIDA',
@@ -5642,7 +5654,13 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
     'OUTRO',
   ];
 
-  final List<String> opcoesUnidade = const ['m²', 'm³', 'ton', 'un', 'viagem'];
+  final List<String> opcoesUnidade = const [
+    'm²',
+    'm³',
+    'ton',
+    'un',
+    'viagem',
+  ];
 
   final List<String> opcoesEquipamentos = const [
     'CAMINHÃO BASCULANTE TRUCK',
@@ -5701,11 +5719,7 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
     return [];
   }
 
-  String textoJson(
-    Map<String, dynamic> dados,
-    String chave, {
-    String padrao = '',
-  }) {
+  String textoJson(Map<String, dynamic> dados, String chave, {String padrao = ''}) {
     final valor = dados[chave];
 
     if (valor == null) {
@@ -5732,27 +5746,11 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
 
       final map = Map<String, dynamic>.from(dados);
 
-      final obraIdJson = int.tryParse(map['obra_id']?.toString() ?? '');
-      final obraNomeJson = textoJson(map, 'obra_nome');
-
-      if (obraIdJson != null) {
-        obraIdSelecionada = obraIdJson;
-      } else if (rascunho.obraId != null) {
-        obraIdSelecionada = rascunho.obraId;
-      }
-
-      if (obraNomeJson.isNotEmpty) {
-        obraNomeSelecionada = obraNomeJson;
-      } else if ((rascunho.obraNome ?? '').trim().isNotEmpty) {
-        obraNomeSelecionada = rascunho.obraNome!.trim();
-      }
-
-      final dataRascunho = textoJson(
+      dataController.text = textoJson(
         map,
         'data_diario',
         padrao: rascunho.dataDiario ?? dataController.text,
       );
-      dataController.text = dataDiarioParaTela(dataRascunho);
       equipeController.text = textoJson(
         map,
         'equipe',
@@ -5773,24 +5771,15 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
       observacoesController.text = textoJson(
         map,
         'comentarios_ocorrencias',
-        padrao: textoJson(
-          map,
-          'observacoes',
-          padrao: rascunho.observacoes ?? '',
-        ),
+        padrao: textoJson(map, 'observacoes', padrao: rascunho.observacoes ?? ''),
       );
 
       climaSelecionado = textoJson(map, 'clima', padrao: 'Bom');
-      climaManhaSelecionado = textoJson(
-        map,
-        'clima_manha',
-        padrao: climaSelecionado,
-      );
+      climaManhaSelecionado = textoJson(map, 'clima_manha', padrao: climaSelecionado);
       climaTardeSelecionado = textoJson(map, 'clima_tarde', padrao: 'Bom');
 
       final acidenteTexto = textoJson(map, 'acidente').toLowerCase();
-      houveAcidente =
-          acidenteTexto == 'houve' ||
+      houveAcidente = acidenteTexto == 'houve' ||
           acidenteTexto == 'sim' ||
           map['houve_acidente'] == true;
 
@@ -5828,17 +5817,20 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
       maoObra
         ..clear()
         ..addAll(
-          listaMap(map['mao_obra_direta'] ?? map['mao_obra_direta_lista']),
+          listaMap(
+            map['mao_obra_direta'] ?? map['mao_obra_direta_lista'],
+          ),
         );
 
       maoObraIndireta
         ..clear()
         ..addAll(
-          listaMap(map['mao_obra_indireta'] ?? map['mao_obra_indireta_lista']),
+          listaMap(
+            map['mao_obra_indireta'] ?? map['mao_obra_indireta_lista'],
+          ),
         );
 
-      final compareceu =
-          map['compareceu_campo'] ?? map['compareceu_campo_dict'];
+      final compareceu = map['compareceu_campo'] ?? map['compareceu_campo_dict'];
 
       if (compareceu is Map) {
         for (final chave in compareceuCampo.keys) {
@@ -5850,8 +5842,7 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
         }
       }
 
-      final sinalizacao =
-          map['material_sinalizacao'] ?? map['material_sinalizacao_dict'];
+      final sinalizacao = map['material_sinalizacao'] ?? map['material_sinalizacao_dict'];
 
       if (sinalizacao is Map) {
         conePlasticoController.text =
@@ -5884,274 +5875,19 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
     }
   }
 
-  Future<void> carregarObrasFormulario() async {
-    if (mounted) {
-      setState(() {
-        carregandoObrasFormulario = true;
-      });
-    }
-
-    try {
-      final obras = await authService.listarObrasLocais();
-
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        obrasLocaisFormulario = obras;
-
-        if (obrasLocaisFormulario.isNotEmpty) {
-          final existeSelecionada =
-              obraIdSelecionada != null &&
-              obrasLocaisFormulario.any((obra) => obra.id == obraIdSelecionada);
-
-          if (!existeSelecionada) {
-            LocalObra? porNome;
-
-            for (final obra in obrasLocaisFormulario) {
-              if (obra.nome.trim().toLowerCase() ==
-                  obraNomeSelecionada.trim().toLowerCase()) {
-                porNome = obra;
-                break;
-              }
-            }
-
-            final escolhida = porNome ?? obrasLocaisFormulario.first;
-            obraIdSelecionada = escolhida.id;
-            obraNomeSelecionada = escolhida.nome;
-          } else {
-            final escolhida = obrasLocaisFormulario.firstWhere(
-              (obra) => obra.id == obraIdSelecionada,
-            );
-            obraNomeSelecionada = escolhida.nome;
-          }
-        }
-
-        carregandoObrasFormulario = false;
-      });
-    } catch (_) {
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        carregandoObrasFormulario = false;
-      });
-    }
-  }
-
-  Widget seletorObraFormulario() {
-    if (carregandoObrasFormulario) {
-      return Container(
-        width: double.infinity,
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF8FAFC),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
-        ),
-        child: const Row(
-          children: [
-            SizedBox(
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-            SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'Carregando obras vinculadas...',
-                style: TextStyle(
-                  color: Color(0xFF64748B),
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (obrasLocaisFormulario.isEmpty) {
-      return Container(
-        width: double.infinity,
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: const Color(0xFFFFFBEB),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFFDE68A)),
-        ),
-        child: const Text(
-          'Nenhuma obra vinculada encontrada no app. Sincronize novamente antes de lançar.',
-          style: TextStyle(
-            color: Color(0xFF92400E),
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-      );
-    }
-
-    final valorAtual =
-        obraIdSelecionada != null &&
-            obrasLocaisFormulario.any((obra) => obra.id == obraIdSelecionada)
-        ? obraIdSelecionada
-        : null;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: DropdownButtonFormField<int>(
-        value: valorAtual,
-        isExpanded: true,
-        validator: (valor) {
-          if (valor == null) {
-            return 'Selecione o contrato/obra';
-          }
-
-          return null;
-        },
-        decoration: InputDecoration(
-          labelText: 'Contrato / obra',
-          prefixIcon: const Icon(Icons.business_outlined),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(18)),
-          filled: true,
-          fillColor: Colors.white,
-        ),
-        items: obrasLocaisFormulario.map((obra) {
-          return DropdownMenuItem<int>(
-            value: obra.id,
-            child: Text(obra.nome, overflow: TextOverflow.ellipsis),
-          );
-        }).toList(),
-        onChanged: (valor) {
-          if (valor == null) {
-            return;
-          }
-
-          final obra = obrasLocaisFormulario.firstWhere(
-            (item) => item.id == valor,
-          );
-
-          setState(() {
-            obraIdSelecionada = obra.id;
-            obraNomeSelecionada = obra.nome;
-          });
-        },
-      ),
-    );
-  }
-
-  String dataDiarioParaTela(String valor) {
-    final texto = valor.trim();
-
-    if (texto.isEmpty) {
-      return texto;
-    }
-
-    final iso = RegExp(r'^(\d{4})-(\d{2})-(\d{2})$').firstMatch(texto);
-
-    if (iso != null) {
-      final ano = iso.group(1)!;
-      final mes = iso.group(2)!;
-      final dia = iso.group(3)!;
-      return '$dia/$mes/$ano';
-    }
-
-    final br = RegExp(r'^(\d{2})/(\d{2})/(\d{4})$').firstMatch(texto);
-
-    if (br != null) {
-      return texto;
-    }
-
-    try {
-      final data = DateTime.parse(texto);
-      final dia = data.day.toString().padLeft(2, '0');
-      final mes = data.month.toString().padLeft(2, '0');
-      final ano = data.year.toString();
-
-      return '$dia/$mes/$ano';
-    } catch (_) {
-      return texto;
-    }
-  }
-
-  String dataDiarioParaApi(String valor) {
-    final texto = valor.trim();
-
-    final br = RegExp(r'^(\d{2})/(\d{2})/(\d{4})$').firstMatch(texto);
-
-    if (br != null) {
-      final dia = br.group(1)!;
-      final mes = br.group(2)!;
-      final ano = br.group(3)!;
-      return '$ano-$mes-$dia';
-    }
-
-    return texto;
-  }
-
-  String? validarDataDiario(String? valor) {
-    final texto = valor?.trim() ?? '';
-
-    if (texto.isEmpty) {
-      return 'Campo obrigatório';
-    }
-
-    final br = RegExp(r'^(\d{2})/(\d{2})/(\d{4})$').firstMatch(texto);
-    final iso = RegExp(r'^(\d{4})-(\d{2})-(\d{2})$').firstMatch(texto);
-
-    int? dia;
-    int? mes;
-    int? ano;
-
-    if (br != null) {
-      dia = int.tryParse(br.group(1)!);
-      mes = int.tryParse(br.group(2)!);
-      ano = int.tryParse(br.group(3)!);
-    } else if (iso != null) {
-      ano = int.tryParse(iso.group(1)!);
-      mes = int.tryParse(iso.group(2)!);
-      dia = int.tryParse(iso.group(3)!);
-    } else {
-      return 'Use o formato DD/MM/AAAA';
-    }
-
-    if (dia == null || mes == null || ano == null) {
-      return 'Data inválida';
-    }
-
-    try {
-      final data = DateTime(ano, mes, dia);
-
-      if (data.day != dia || data.month != mes || data.year != ano) {
-        return 'Data inválida';
-      }
-    } catch (_) {
-      return 'Data inválida';
-    }
-
-    return null;
-  }
-
   @override
   void initState() {
     super.initState();
-
-    obraIdSelecionada = widget.rascunhoExistente?.obraId ?? widget.obraId;
-    obraNomeSelecionada = widget.rascunhoExistente?.obraNome ?? widget.obraNome;
 
     final agora = DateTime.now();
     final dia = agora.day.toString().padLeft(2, '0');
     final mes = agora.month.toString().padLeft(2, '0');
     final ano = agora.year.toString();
 
-    dataController.text = '$dia/$mes/$ano';
+    dataController.text = '$ano-$mes-$dia';
     condicaoOperacaoController.text = 'Praticável';
 
     carregarRascunhoExistente();
-    carregarObrasFormulario();
   }
 
   @override
@@ -6208,11 +5944,6 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
       return;
     }
 
-    if (obraIdSelecionada == null || obraNomeSelecionada.trim().isEmpty) {
-      mostrarMensagem('Selecione o contrato/obra do diário.');
-      return;
-    }
-
     if (servicos.isEmpty) {
       mostrarMensagem('Adicione pelo menos um serviço executado.');
       return;
@@ -6227,14 +5958,13 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
       salvando = true;
     });
 
-    final totalPessoal =
-        totalQuantidadeLista(maoObra) + totalQuantidadeLista(maoObraIndireta);
+    final totalPessoal = totalQuantidadeLista(maoObra) +
+        totalQuantidadeLista(maoObraIndireta);
     final totalEquipamentos = equipamentos.length;
 
     final dados = {
-      'obra_id': obraIdSelecionada,
-      'obra_nome': obraNomeSelecionada,
-      'data_diario': dataDiarioParaApi(dataController.text.trim()),
+      'obra_nome': widget.obraNome,
+      'data_diario': dataController.text.trim(),
       'equipe': equipeController.text.trim(),
 
       // Campos DNIT compatíveis com o Flask.
@@ -6248,9 +5978,7 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
       'hora_entrada': horaEntradaController.text.trim(),
       'hora_saida': horaSaidaController.text.trim(),
 
-      'tipo_servico': servicos.isNotEmpty
-          ? servicos.first['tipo_servico']
-          : null,
+      'tipo_servico': servicos.isNotEmpty ? servicos.first['tipo_servico'] : null,
       'km_inicial': servicos.isNotEmpty ? servicos.first['km_inicial'] : null,
       'km_final': servicos.isNotEmpty ? servicos.first['km_final'] : null,
 
@@ -6331,7 +6059,9 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
   }
 
   void mostrarMensagem(String texto) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(texto)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(texto)),
+    );
   }
 
   Future<String?> campoDialogo({
@@ -6363,8 +6093,7 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
               child: const Text('Cancelar'),
             ),
             FilledButton(
-              onPressed: () =>
-                  Navigator.of(context).pop(controller.text.trim()),
+              onPressed: () => Navigator.of(context).pop(controller.text.trim()),
               child: const Text('Salvar'),
             ),
           ],
@@ -6380,204 +6109,49 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
 
     final configsPorServico = <String, List<Map<String, dynamic>>>{
       'CAPA ASFÁLTICA / REVESTIMENTO': [
-        {
-          'campo': 'km_inicial',
-          'label': 'KM inicial',
-          'tipo': 'text',
-          'placeholder': 'Ex: 234,430',
-        },
-        {
-          'campo': 'km_final',
-          'label': 'KM final',
-          'tipo': 'text',
-          'placeholder': 'Ex: 235,100',
-        },
-        {
-          'campo': 'lado',
-          'label': 'Lado',
-          'tipo': 'select',
-          'opcoes': ['Direito', 'Esquerdo', 'Ambos'],
-        },
-        {
-          'campo': 'observacao',
-          'label': 'Observações',
-          'tipo': 'textarea',
-          'placeholder': 'Observações do serviço executado',
-        },
+        {'campo': 'km_inicial', 'label': 'KM inicial', 'tipo': 'text', 'placeholder': 'Ex: 234,430'},
+        {'campo': 'km_final', 'label': 'KM final', 'tipo': 'text', 'placeholder': 'Ex: 235,100'},
+        {'campo': 'lado', 'label': 'Lado', 'tipo': 'select', 'opcoes': ['Direito', 'Esquerdo', 'Ambos']},
+        {'campo': 'observacao', 'label': 'Observações', 'tipo': 'textarea', 'placeholder': 'Observações do serviço executado'},
       ],
       'DRENAGEM': [
-        {
-          'campo': 'km_localizacao',
-          'label': 'KM de localização do dreno',
-          'tipo': 'text',
-          'placeholder': 'Ex: 234,430',
-        },
-        {
-          'campo': 'observacao',
-          'label': 'Observações',
-          'tipo': 'textarea',
-          'placeholder': 'Observações do serviço executado',
-        },
+        {'campo': 'km_localizacao', 'label': 'KM de localização do dreno', 'tipo': 'text', 'placeholder': 'Ex: 234,430'},
+        {'campo': 'observacao', 'label': 'Observações', 'tipo': 'textarea', 'placeholder': 'Observações do serviço executado'},
       ],
       'PALIATIVO / ENROCAMENTO DE PEDRAS': [
-        {
-          'campo': 'km_inicial',
-          'label': 'KM inicial',
-          'tipo': 'text',
-          'placeholder': 'Ex: 234,430',
-        },
-        {
-          'campo': 'km_final',
-          'label': 'KM final',
-          'tipo': 'text',
-          'placeholder': 'Ex: 235,100',
-        },
-        {
-          'campo': 'lado',
-          'label': 'Lado',
-          'tipo': 'select',
-          'opcoes': ['Direito', 'Esquerdo', 'Ambos'],
-        },
-        {
-          'campo': 'observacao',
-          'label': 'Observações',
-          'tipo': 'textarea',
-          'placeholder': 'Observações do serviço executado',
-        },
+        {'campo': 'km_inicial', 'label': 'KM inicial', 'tipo': 'text', 'placeholder': 'Ex: 234,430'},
+        {'campo': 'km_final', 'label': 'KM final', 'tipo': 'text', 'placeholder': 'Ex: 235,100'},
+        {'campo': 'lado', 'label': 'Lado', 'tipo': 'select', 'opcoes': ['Direito', 'Esquerdo', 'Ambos']},
+        {'campo': 'observacao', 'label': 'Observações', 'tipo': 'textarea', 'placeholder': 'Observações do serviço executado'},
       ],
       'REPARO PROFUNDO / TROCA DE SOLO': [
-        {
-          'campo': 'numero_remendos',
-          'label': 'Número de remendos',
-          'tipo': 'number',
-          'placeholder': 'Ex: 5',
-        },
-        {
-          'campo': 'km_inicial',
-          'label': 'KM inicial',
-          'tipo': 'text',
-          'placeholder': 'Ex: 233,540',
-        },
-        {
-          'campo': 'km_final',
-          'label': 'KM final',
-          'tipo': 'text',
-          'placeholder': 'Ex: 233,890',
-        },
-        {
-          'campo': 'lado',
-          'label': 'Lado',
-          'tipo': 'select',
-          'opcoes': ['Direito', 'Esquerdo', 'Ambos'],
-        },
-        {
-          'campo': 'area_total_escavada_m2',
-          'label': 'Área total escavada em m²',
-          'tipo': 'number',
-          'placeholder': 'Ex: 120,50',
-        },
-        {
-          'campo': 'volume_pedra_3_m3',
-          'label': 'Volume de Pedra nº3 usado em m³',
-          'tipo': 'number',
-          'placeholder': 'Ex: 35,00',
-        },
-        {
-          'campo': 'volume_bgs_m3',
-          'label': 'Volume de BGS usado em m³',
-          'tipo': 'number',
-          'placeholder': 'Ex: 18,00',
-        },
-        {
-          'campo': 'area_total_escavada_dreno_m2',
-          'label': 'Área total escavada no dreno em m²',
-          'tipo': 'number',
-          'placeholder': 'Ex: 20,00',
-        },
-        {
-          'campo': 'volume_pedra_3_dreno_m3',
-          'label': 'Volume de Pedra nº3 no dreno em m³',
-          'tipo': 'number',
-          'placeholder': 'Ex: 8,00',
-        },
-        {
-          'campo': 'observacao',
-          'label': 'Observações',
-          'tipo': 'textarea',
-          'placeholder': 'Observações do serviço executado',
-        },
+        {'campo': 'numero_remendos', 'label': 'Número de remendos', 'tipo': 'number', 'placeholder': 'Ex: 5'},
+        {'campo': 'km_inicial', 'label': 'KM inicial', 'tipo': 'text', 'placeholder': 'Ex: 233,540'},
+        {'campo': 'km_final', 'label': 'KM final', 'tipo': 'text', 'placeholder': 'Ex: 233,890'},
+        {'campo': 'lado', 'label': 'Lado', 'tipo': 'select', 'opcoes': ['Direito', 'Esquerdo', 'Ambos']},
+        {'campo': 'area_total_escavada_m2', 'label': 'Área total escavada em m²', 'tipo': 'number', 'placeholder': 'Ex: 120,50'},
+        {'campo': 'volume_pedra_3_m3', 'label': 'Volume de Pedra nº3 usado em m³', 'tipo': 'number', 'placeholder': 'Ex: 35,00'},
+        {'campo': 'volume_bgs_m3', 'label': 'Volume de BGS usado em m³', 'tipo': 'number', 'placeholder': 'Ex: 18,00'},
+        {'campo': 'area_total_escavada_dreno_m2', 'label': 'Área total escavada no dreno em m²', 'tipo': 'number', 'placeholder': 'Ex: 20,00'},
+        {'campo': 'volume_pedra_3_dreno_m3', 'label': 'Volume de Pedra nº3 no dreno em m³', 'tipo': 'number', 'placeholder': 'Ex: 8,00'},
+        {'campo': 'observacao', 'label': 'Observações', 'tipo': 'textarea', 'placeholder': 'Observações do serviço executado'},
       ],
       'RECICLAGEM': [
-        {
-          'campo': 'km_inicial',
-          'label': 'KM inicial',
-          'tipo': 'text',
-          'placeholder': 'Ex: 234,430',
-        },
-        {
-          'campo': 'km_final',
-          'label': 'KM final',
-          'tipo': 'text',
-          'placeholder': 'Ex: 235,100',
-        },
-        {
-          'campo': 'lado',
-          'label': 'Lado',
-          'tipo': 'select',
-          'opcoes': ['Direito', 'Esquerdo', 'Ambos'],
-        },
-        {
-          'campo': 'largura_m',
-          'label': 'Largura em m',
-          'tipo': 'number',
-          'placeholder': 'Ex: 3,50',
-        },
-        {
-          'campo': 'observacao',
-          'label': 'Observações',
-          'tipo': 'textarea',
-          'placeholder': 'Observações do serviço executado',
-        },
+        {'campo': 'km_inicial', 'label': 'KM inicial', 'tipo': 'text', 'placeholder': 'Ex: 234,430'},
+        {'campo': 'km_final', 'label': 'KM final', 'tipo': 'text', 'placeholder': 'Ex: 235,100'},
+        {'campo': 'lado', 'label': 'Lado', 'tipo': 'select', 'opcoes': ['Direito', 'Esquerdo', 'Ambos']},
+        {'campo': 'largura_m', 'label': 'Largura em m', 'tipo': 'number', 'placeholder': 'Ex: 3,50'},
+        {'campo': 'observacao', 'label': 'Observações', 'tipo': 'textarea', 'placeholder': 'Observações do serviço executado'},
       ],
       'CORREÇÃO DE DEFEITOS COM CBUQ': [
-        {
-          'campo': 'km_inicial',
-          'label': 'KM inicial',
-          'tipo': 'text',
-          'placeholder': 'Ex: 234,430',
-        },
-        {
-          'campo': 'km_final',
-          'label': 'KM final',
-          'tipo': 'text',
-          'placeholder': 'Ex: 235,100',
-        },
-        {
-          'campo': 'lado',
-          'label': 'Lado',
-          'tipo': 'select',
-          'opcoes': ['Direito', 'Esquerdo', 'Ambos'],
-        },
-        {
-          'campo': 'observacao',
-          'label': 'Observações',
-          'tipo': 'textarea',
-          'placeholder': 'Observações do serviço executado',
-        },
+        {'campo': 'km_inicial', 'label': 'KM inicial', 'tipo': 'text', 'placeholder': 'Ex: 234,430'},
+        {'campo': 'km_final', 'label': 'KM final', 'tipo': 'text', 'placeholder': 'Ex: 235,100'},
+        {'campo': 'lado', 'label': 'Lado', 'tipo': 'select', 'opcoes': ['Direito', 'Esquerdo', 'Ambos']},
+        {'campo': 'observacao', 'label': 'Observações', 'tipo': 'textarea', 'placeholder': 'Observações do serviço executado'},
       ],
       'OUTROS': [
-        {
-          'campo': 'descricao_livre',
-          'label': 'Descrição do serviço',
-          'tipo': 'textarea',
-          'placeholder': 'Descreva o serviço executado',
-        },
-        {
-          'campo': 'observacao',
-          'label': 'Observações',
-          'tipo': 'textarea',
-          'placeholder': 'Observações do serviço executado',
-        },
+        {'campo': 'descricao_livre', 'label': 'Descrição do serviço', 'tipo': 'textarea', 'placeholder': 'Descreva o serviço executado'},
+        {'campo': 'observacao', 'label': 'Observações', 'tipo': 'textarea', 'placeholder': 'Observações do serviço executado'},
       ],
     };
 
@@ -6616,7 +6190,10 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
               border: const OutlineInputBorder(),
             ),
             items: opcoes.map((opcao) {
-              return DropdownMenuItem(value: opcao, child: Text(opcao));
+              return DropdownMenuItem(
+                value: opcao,
+                child: Text(opcao),
+              );
             }).toList(),
             onChanged: (valor) {
               setDialogState(() {
@@ -6669,7 +6246,10 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
                         items: opcoesServico.map((item) {
                           return DropdownMenuItem(
                             value: item,
-                            child: Text(item, overflow: TextOverflow.ellipsis),
+                            child: Text(
+                              item,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           );
                         }).toList(),
                         onChanged: (valor) {
@@ -6687,7 +6267,9 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
                           decoration: BoxDecoration(
                             color: const Color(0xFFF8FAFC),
                             borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                            border: Border.all(
+                              color: const Color(0xFFE2E8F0),
+                            ),
                           ),
                           child: const Text(
                             'Selecione o tipo de serviço para exibir os campos.',
@@ -6709,7 +6291,9 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
                 ),
                 FilledButton(
                   onPressed: () {
-                    final item = <String, dynamic>{'tipo_servico': tipo};
+                    final item = <String, dynamic>{
+                      'tipo_servico': tipo,
+                    };
 
                     final camposAtuais = configsPorServico[tipo] ?? [];
 
@@ -6782,7 +6366,10 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
                         border: OutlineInputBorder(),
                       ),
                       items: opcoesMateriais.map((item) {
-                        return DropdownMenuItem(value: item, child: Text(item));
+                        return DropdownMenuItem(
+                          value: item,
+                          child: Text(item),
+                        );
                       }).toList(),
                       onChanged: (valor) {
                         if (valor == null) return;
@@ -6806,7 +6393,10 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
                         border: OutlineInputBorder(),
                       ),
                       items: opcoesUnidade.map((item) {
-                        return DropdownMenuItem(value: item, child: Text(item));
+                        return DropdownMenuItem(
+                          value: item,
+                          child: Text(item),
+                        );
                       }).toList(),
                       onChanged: (valor) {
                         if (valor == null) return;
@@ -6891,6 +6481,7 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
       },
     );
 
+
     if (resultado != null) {
       setState(() {
         materiais.add(resultado);
@@ -6923,7 +6514,10 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
                         border: OutlineInputBorder(),
                       ),
                       items: opcoesEquipamentos.map((item) {
-                        return DropdownMenuItem(value: item, child: Text(item));
+                        return DropdownMenuItem(
+                          value: item,
+                          child: Text(item),
+                        );
                       }).toList(),
                       onChanged: (valor) {
                         if (valor == null) return;
@@ -6981,6 +6575,7 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
       },
     );
 
+
     if (resultado != null) {
       setState(() {
         equipamentos.add(resultado);
@@ -7017,7 +6612,10 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
                       items: opcoes.map((item) {
                         return DropdownMenuItem(
                           value: item,
-                          child: Text(item, overflow: TextOverflow.ellipsis),
+                          child: Text(
+                            item,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         );
                       }).toList(),
                       onChanged: (valor) {
@@ -7083,9 +6681,7 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
 
   Future<Directory> pastaFotosRascunho() async {
     final pastaBase = await getApplicationDocumentsDirectory();
-    final pasta = Directory(
-      '${pastaBase.path}${Platform.pathSeparator}rascunhos_fotos',
-    );
+    final pasta = Directory('${pastaBase.path}${Platform.pathSeparator}rascunhos_fotos');
 
     if (!await pasta.exists()) {
       await pasta.create(recursive: true);
@@ -7144,7 +6740,9 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
 
   Future<void> adicionarFotosGaleria() async {
     try {
-      final fotos = await imagePicker.pickMultiImage(imageQuality: 82);
+      final fotos = await imagePicker.pickMultiImage(
+        imageQuality: 82,
+      );
 
       if (fotos.isEmpty) {
         return;
@@ -7220,7 +6818,10 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
                     color: const Color(0xFFEEF2FF),
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Icon(icon, color: const Color(0xFF1D4ED8)),
+                  child: Icon(
+                    icon,
+                    color: const Color(0xFF1D4ED8),
+                  ),
                 ),
           isDense: false,
           contentPadding: const EdgeInsets.symmetric(
@@ -7235,18 +6836,27 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
             color: Color(0xFF94A3B8),
             fontWeight: FontWeight.w600,
           ),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(20),
-            borderSide: const BorderSide(color: Color(0xFFD7E0EA)),
+            borderSide: const BorderSide(
+              color: Color(0xFFD7E0EA),
+            ),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(20),
-            borderSide: const BorderSide(color: Color(0xFF1D4ED8), width: 1.6),
+            borderSide: const BorderSide(
+              color: Color(0xFF1D4ED8),
+              width: 1.6,
+            ),
           ),
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(20),
-            borderSide: const BorderSide(color: Color(0xFFEF4444)),
+            borderSide: const BorderSide(
+              color: Color(0xFFEF4444),
+            ),
           ),
           filled: true,
           fillColor: Colors.white,
@@ -7265,7 +6875,9 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(
+          color: const Color(0xFFE2E8F0),
+        ),
         boxShadow: const [
           BoxShadow(
             color: Color(0x0D000000),
@@ -7275,10 +6887,15 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
         ],
       ),
       child: Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        data: Theme.of(context).copyWith(
+          dividerColor: Colors.transparent,
+        ),
         child: ExpansionTile(
           initiallyExpanded: false,
-          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+          tilePadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 7,
+          ),
           collapsedShape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24),
           ),
@@ -7290,13 +6907,20 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
             height: 42,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF1D4ED8), Color(0xFF60A5FA)],
+                colors: [
+                  Color(0xFF1D4ED8),
+                  Color(0xFF60A5FA),
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(15),
             ),
-            child: Icon(icon, color: Colors.white, size: 22),
+            child: Icon(
+              icon,
+              color: Colors.white,
+              size: 22,
+            ),
           ),
           title: Text(
             titulo,
@@ -7338,7 +6962,9 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
             decoration: BoxDecoration(
               color: const Color(0xFFF8FAFC),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+              border: Border.all(
+                color: const Color(0xFFE2E8F0),
+              ),
             ),
             child: Column(
               children: [
@@ -7370,7 +6996,9 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
               decoration: BoxDecoration(
                 color: const Color(0xFFF8FAFC),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                border: Border.all(
+                  color: const Color(0xFFE2E8F0),
+                ),
               ),
               child: Row(
                 children: [
@@ -7440,7 +7068,9 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
             label: const Text('Adicionar item'),
             style: OutlinedButton.styleFrom(
               foregroundColor: const Color(0xFF1D4ED8),
-              side: const BorderSide(color: Color(0xFF1D4ED8)),
+              side: const BorderSide(
+                color: Color(0xFF1D4ED8),
+              ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(18),
               ),
@@ -7513,7 +7143,9 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(
+          color: const Color(0xFFE2E8F0),
+        ),
         boxShadow: const [
           BoxShadow(
             color: Color(0x0A000000),
@@ -7544,7 +7176,9 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
               alignment: Alignment.center,
               decoration: const BoxDecoration(
                 color: Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(22),
+                ),
               ),
               child: const Icon(
                 Icons.broken_image_outlined,
@@ -7604,7 +7238,9 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
       backgroundColor: const Color(0xFFF4F7FB),
       appBar: AppBar(
         title: Text(
-          widget.rascunhoExistente == null ? 'Novo diário' : 'Editar pendente',
+          widget.rascunhoExistente == null
+              ? 'Novo diário'
+              : 'Editar pendente',
         ),
       ),
       body: Form(
@@ -7690,9 +7326,7 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    obraNomeSelecionada.trim().isEmpty
-                        ? widget.obraNome
-                        : obraNomeSelecionada,
+                    widget.obraNome,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 24,
@@ -7717,13 +7351,12 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
               titulo: 'Dados do diário',
               icon: Icons.assignment_outlined,
               children: [
-                seletorObraFormulario(),
                 campoTexto(
                   controller: dataController,
                   label: 'Data do diário',
-                  hint: 'DD/MM/AAAA',
+                  hint: 'AAAA-MM-DD',
                   icon: Icons.calendar_month_outlined,
-                  validator: validarDataDiario,
+                  validator: obrigatorio,
                 ),
                 campoTexto(
                   controller: equipeController,
@@ -7745,7 +7378,10 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
                       fillColor: Colors.white,
                     ),
                     items: opcoesClima.map((item) {
-                      return DropdownMenuItem(value: item, child: Text(item));
+                      return DropdownMenuItem(
+                        value: item,
+                        child: Text(item),
+                      );
                     }).toList(),
                     onChanged: (valor) {
                       if (valor == null) return;
@@ -7770,7 +7406,10 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
                       fillColor: Colors.white,
                     ),
                     items: opcoesClima.map((item) {
-                      return DropdownMenuItem(value: item, child: Text(item));
+                      return DropdownMenuItem(
+                        value: item,
+                        child: Text(item),
+                      );
                     }).toList(),
                     onChanged: (valor) {
                       if (valor == null) return;
@@ -7781,10 +7420,8 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: DropdownButtonFormField<String>(
-                    value:
-                        opcoesCondicaoOperacao.contains(
-                          condicaoOperacaoController.text,
-                        )
+                    value: opcoesCondicaoOperacao.contains(
+                            condicaoOperacaoController.text)
                         ? condicaoOperacaoController.text
                         : 'Praticável',
                     decoration: InputDecoration(
@@ -7797,7 +7434,10 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
                       fillColor: Colors.white,
                     ),
                     items: opcoesCondicaoOperacao.map((item) {
-                      return DropdownMenuItem(value: item, child: Text(item));
+                      return DropdownMenuItem(
+                        value: item,
+                        child: Text(item),
+                      );
                     }).toList(),
                     onChanged: (valor) {
                       if (valor == null) return;
@@ -7858,8 +7498,7 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
                 listaDinamica(
                   itens: servicos,
                   vazio: 'Nenhum serviço adicionado.',
-                  titulo: (item) =>
-                      item['tipo_servico']?.toString() ?? 'Serviço',
+                  titulo: (item) => item['tipo_servico']?.toString() ?? 'Serviço',
                   subtitulo: (item) {
                     final kmInicial = item['km_inicial']?.toString() ?? '-';
                     final kmFinal = item['km_final']?.toString() ?? '-';
@@ -7884,8 +7523,7 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
                   itens: maoObra,
                   vazio: 'Nenhuma mão de obra adicionada.',
                   titulo: (item) => item['funcao']?.toString() ?? 'Função',
-                  subtitulo: (item) =>
-                      'Quantidade: ${item['quantidade'] ?? '-'}',
+                  subtitulo: (item) => 'Quantidade: ${item['quantidade'] ?? '-'}',
                   adicionar: adicionarMaoObra,
                 ),
               ],
@@ -7898,8 +7536,7 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
                   itens: maoObraIndireta,
                   vazio: 'Nenhuma mão de obra indireta adicionada.',
                   titulo: (item) => item['funcao']?.toString() ?? 'Função',
-                  subtitulo: (item) =>
-                      'Quantidade: ${item['quantidade'] ?? '-'}',
+                  subtitulo: (item) => 'Quantidade: ${item['quantidade'] ?? '-'}',
                   adicionar: adicionarMaoObraIndireta,
                 ),
               ],
@@ -7911,8 +7548,7 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
                 listaDinamica(
                   itens: equipamentos,
                   vazio: 'Nenhum equipamento adicionado.',
-                  titulo: (item) =>
-                      item['equipamento']?.toString() ?? 'Equipamento',
+                  titulo: (item) => item['equipamento']?.toString() ?? 'Equipamento',
                   subtitulo: (item) =>
                       'Código/Placa: ${item['codigo_placa'] ?? '-'} • Horímetro/KM: ${item['horimetro_quilometragem'] ?? '-'}',
                   adicionar: adicionarEquipamento,
@@ -7928,8 +7564,7 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
                   vazio: 'Nenhum material adicionado.',
                   titulo: (item) => item['material']?.toString() ?? 'Material',
                   subtitulo: (item) {
-                    final temperatura =
-                        item['temperatura_cbuq']?.toString() ?? '';
+                    final temperatura = item['temperatura_cbuq']?.toString() ?? '';
 
                     if ((item['material']?.toString() ?? '') == 'CBUQ' &&
                         temperatura.isNotEmpty) {
@@ -7996,7 +7631,9 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
                   decoration: BoxDecoration(
                     color: const Color(0xFFEFF6FF),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFBFDBFE)),
+                    border: Border.all(
+                      color: const Color(0xFFBFDBFE),
+                    ),
                   ),
                   child: const Text(
                     'As fotos ficam salvas junto com o diário pendente e serão enviadas automaticamente quando houver conexão.',
@@ -8033,7 +7670,9 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
                     decoration: BoxDecoration(
                       color: const Color(0xFFF8FAFC),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      border: Border.all(
+                        color: const Color(0xFFE2E8F0),
+                      ),
                     ),
                     child: const Text(
                       'Nenhuma foto adicionada ao rascunho.',
@@ -8046,8 +7685,11 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
                   )
                 else
                   ...fotosOffline.asMap().entries.map(
-                    (entry) => cardFotoOffline(entry.key, entry.value),
-                  ),
+                        (entry) => cardFotoOffline(
+                          entry.key,
+                          entry.value,
+                        ),
+                      ),
               ],
             ),
             secaoFormulario(
@@ -8064,7 +7706,9 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
                   contentPadding: EdgeInsets.zero,
                   title: const Text(
                     'Houve acidente?',
-                    style: TextStyle(fontWeight: FontWeight.w800),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   value: houveAcidente,
                   onChanged: (valor) {
@@ -8116,8 +7760,8 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
                   salvando
                       ? 'Salvando...'
                       : widget.rascunhoExistente == null
-                      ? 'Salvar diário'
-                      : 'Salvar alterações',
+                          ? 'Salvar diário'
+                          : 'Salvar alterações',
                 ),
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF1D4ED8),
@@ -8189,8 +7833,7 @@ class _PendentesOfflinePageState extends State<PendentesOfflinePage> {
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => NovoDiarioOfflinePage(
-          obraId: rascunho.obraId,
-          obraNome: rascunho.obraNome ?? 'Obra não informada',
+          obraNome: rascunho.obraNome,
           rascunhoExistente: rascunho,
         ),
       ),
@@ -8229,7 +7872,9 @@ class _PendentesOfflinePageState extends State<PendentesOfflinePage> {
   Future<void> enviarTodosPendentes() async {
     if (rascunhos.isEmpty || enviandoTodos) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nenhum diário pendente para enviar.')),
+        const SnackBar(
+          content: Text('Nenhum diário pendente para enviar.'),
+        ),
       );
       return;
     }
@@ -8326,7 +7971,9 @@ class _PendentesOfflinePageState extends State<PendentesOfflinePage> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Diário enviado com sucesso.')),
+        const SnackBar(
+          content: Text('Diário enviado com sucesso.'),
+        ),
       );
 
       await carregarPendentes();
@@ -8339,9 +7986,11 @@ class _PendentesOfflinePageState extends State<PendentesOfflinePage> {
         statusEnvio[item.id] = 'Falhou, tente novamente';
       });
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(mensagemErroEnvio(erro))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(mensagemErroEnvio(erro)),
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() {
@@ -8421,16 +8070,25 @@ class _PendentesOfflinePageState extends State<PendentesOfflinePage> {
     final color = corDoStatus(status);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 11,
+        vertical: 7,
+      ),
       decoration: BoxDecoration(
         color: color.withOpacity(0.11),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withOpacity(0.32)),
+        border: Border.all(
+          color: color.withOpacity(0.32),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(iconeDoStatus(status), size: 15, color: color),
+          Icon(
+            iconeDoStatus(status),
+            size: 15,
+            color: color,
+          ),
           const SizedBox(width: 6),
           Text(
             status,
@@ -8454,7 +8112,11 @@ class _PendentesOfflinePageState extends State<PendentesOfflinePage> {
       padding: const EdgeInsets.only(top: 7),
       child: Row(
         children: [
-          Icon(icon, size: 17, color: textoFraco),
+          Icon(
+            icon,
+            size: 17,
+            color: textoFraco,
+          ),
           const SizedBox(width: 8),
           Text(
             '$label: ',
@@ -8526,7 +8188,9 @@ class _PendentesOfflinePageState extends State<PendentesOfflinePage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: statusColor.withOpacity(0.18)),
+        border: Border.all(
+          color: statusColor.withOpacity(0.18),
+        ),
         boxShadow: const [
           BoxShadow(
             color: Color(0x0E000000),
@@ -8560,7 +8224,10 @@ class _PendentesOfflinePageState extends State<PendentesOfflinePage> {
                       ),
                       borderRadius: BorderRadius.circular(17),
                     ),
-                    child: const Icon(Icons.edit_document, color: Colors.white),
+                    child: const Icon(
+                      Icons.edit_document,
+                      color: Colors.white,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -8577,7 +8244,7 @@ class _PendentesOfflinePageState extends State<PendentesOfflinePage> {
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          item.obraNome ?? 'Obra não informada',
+                          item.obraNome,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
@@ -8661,9 +8328,7 @@ class _PendentesOfflinePageState extends State<PendentesOfflinePage> {
                     child: FilledButton.icon(
                       onPressed: enviando ? null : () => enviarPendente(item),
                       icon: Icon(
-                        enviando
-                            ? Icons.hourglass_empty
-                            : Icons.cloud_upload_outlined,
+                        enviando ? Icons.hourglass_empty : Icons.cloud_upload_outlined,
                       ),
                       label: Text(enviando ? 'Enviando...' : 'Enviar'),
                     ),
@@ -8707,7 +8372,11 @@ class _PendentesOfflinePageState extends State<PendentesOfflinePage> {
       ),
       child: const Column(
         children: [
-          Icon(Icons.cloud_done_outlined, size: 46, color: Color(0xFF10B981)),
+          Icon(
+            Icons.cloud_done_outlined,
+            size: 46,
+            color: Color(0xFF10B981),
+          ),
           SizedBox(height: 12),
           Text(
             'Tudo enviado',
@@ -8721,7 +8390,10 @@ class _PendentesOfflinePageState extends State<PendentesOfflinePage> {
           Text(
             'Nenhum diário pendente de envio no dispositivo.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: textoFraco, fontWeight: FontWeight.w700),
+            style: TextStyle(
+              color: textoFraco,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ],
       ),
@@ -8734,7 +8406,11 @@ class _PendentesOfflinePageState extends State<PendentesOfflinePage> {
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF7C2D12), Color(0xFFF97316), Color(0xFFFFB020)],
+          colors: [
+            Color(0xFF7C2D12),
+            Color(0xFFF97316),
+            Color(0xFFFFB020),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -8756,7 +8432,9 @@ class _PendentesOfflinePageState extends State<PendentesOfflinePage> {
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.15),
               borderRadius: BorderRadius.circular(19),
-              border: Border.all(color: Colors.white.withOpacity(0.22)),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.22),
+              ),
             ),
             child: Icon(
               enviandoTodos ? Icons.sync : Icons.outbox_outlined,
@@ -8828,7 +8506,9 @@ class _PendentesOfflinePageState extends State<PendentesOfflinePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: fundo,
-      appBar: AppBar(title: const Text('Pendentes offline')),
+      appBar: AppBar(
+        title: const Text('Pendentes offline'),
+      ),
       body: RefreshIndicator(
         onRefresh: carregarPendentes,
         child: ListView(
@@ -8855,6 +8535,8 @@ class _PendentesOfflinePageState extends State<PendentesOfflinePage> {
     );
   }
 }
+
+
 
 class AppErrorHandler {
   AppErrorHandler._();
@@ -8924,7 +8606,10 @@ class AppErrorHandler {
   }
 
   static String mensagemModoOffline(DioException erro) {
-    final base = _mensagemConexao(erro, contexto: 'Sem conexão com a API.');
+    final base = _mensagemConexao(
+      erro,
+      contexto: 'Sem conexão com a API.',
+    );
 
     return '$base Usando os dados já salvos no dispositivo.';
   }
@@ -9020,9 +8705,7 @@ class _DiagnosticoPageState extends State<DiagnosticoPage> {
     }
 
     setState(() {
-      tokenStatus = token == null || token.isEmpty
-          ? 'Não encontrado'
-          : 'Salvo no dispositivo';
+      tokenStatus = token == null || token.isEmpty ? 'Não encontrado' : 'Salvo no dispositivo';
       fotosOffline = totalFotos;
       tamanhoCacheBytes = tamanhoBytes;
       carregando = false;
@@ -9148,7 +8831,9 @@ class _DiagnosticoPageState extends State<DiagnosticoPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(
+          color: const Color(0xFFE2E8F0),
+        ),
         boxShadow: const [
           BoxShadow(
             color: Color(0x08000000),
@@ -9166,7 +8851,10 @@ class _DiagnosticoPageState extends State<DiagnosticoPage> {
               color: color.withOpacity(0.12),
               borderRadius: BorderRadius.circular(15),
             ),
-            child: Icon(icon, color: color),
+            child: Icon(
+              icon,
+              color: color,
+            ),
           ),
           const SizedBox(width: 13),
           Expanded(
@@ -9199,10 +8887,16 @@ class _DiagnosticoPageState extends State<DiagnosticoPage> {
 
   Widget sectionTitle(String titulo) {
     return Padding(
-      padding: const EdgeInsets.only(top: 8, bottom: 10),
+      padding: const EdgeInsets.only(
+        top: 8,
+        bottom: 10,
+      ),
       child: Text(
         titulo,
-        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
+        style: const TextStyle(
+          fontWeight: FontWeight.w900,
+          fontSize: 18,
+        ),
       ),
     );
   }
@@ -9215,7 +8909,9 @@ class _DiagnosticoPageState extends State<DiagnosticoPage> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(title: const Text('Diagnóstico')),
+      appBar: AppBar(
+        title: const Text('Diagnóstico'),
+      ),
       body: RefreshIndicator(
         onRefresh: carregarDiagnostico,
         child: ListView(
@@ -9226,7 +8922,10 @@ class _DiagnosticoPageState extends State<DiagnosticoPage> {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF111827), Color(0xFF334155)],
+                  colors: [
+                    Color(0xFF111827),
+                    Color(0xFF334155),
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -9272,7 +8971,9 @@ class _DiagnosticoPageState extends State<DiagnosticoPage> {
               const Card(
                 child: Padding(
                   padding: EdgeInsets.all(18),
-                  child: Center(child: CircularProgressIndicator()),
+                  child: Center(
+                    child: CircularProgressIndicator(),
+                  ),
                 ),
               )
             else ...[
@@ -9325,8 +9026,7 @@ class _DiagnosticoPageState extends State<DiagnosticoPage> {
               statusCard(
                 icon: Icons.photo_library_outlined,
                 titulo: 'Fotos offline',
-                valor:
-                    '$fotosOffline foto(s) • ${formatarTamanho(tamanhoCacheBytes)}',
+                valor: '$fotosOffline foto(s) • ${formatarTamanho(tamanhoCacheBytes)}',
                 color: const Color(0xFF7C3AED),
               ),
               sectionTitle('API'),
@@ -9358,14 +9058,10 @@ class _DiagnosticoPageState extends State<DiagnosticoPage> {
               child: FilledButton.icon(
                 onPressed: testandoApi ? null : testarConexaoApi,
                 icon: Icon(
-                  testandoApi
-                      ? Icons.hourglass_empty
-                      : Icons.wifi_find_outlined,
+                  testandoApi ? Icons.hourglass_empty : Icons.wifi_find_outlined,
                 ),
                 label: Text(
-                  testandoApi
-                      ? 'Testando conexão...'
-                      : 'Testar conexão com API',
+                  testandoApi ? 'Testando conexão...' : 'Testar conexão com API',
                 ),
               ),
             ),
@@ -9426,7 +9122,13 @@ class _SincronizacaoPageState extends State<SincronizacaoPage> {
   int totalFotosDownload = 0;
   String? mensagemDownloadFotos;
 
-  final List<int> opcoesLimite = const [10, 50, 100, 300, 500];
+  final List<int> opcoesLimite = const [
+    10,
+    50,
+    100,
+    300,
+    500,
+  ];
 
   @override
   void initState() {
@@ -9484,9 +9186,7 @@ class _SincronizacaoPageState extends State<SincronizacaoPage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Sincronização concluída com limite de $limiteSelecionado diário(s).',
-          ),
+          content: Text('Sincronização concluída com limite de $limiteSelecionado diário(s).'),
         ),
       );
     } catch (_) {
@@ -9603,9 +9303,11 @@ class _SincronizacaoPageState extends State<SincronizacaoPage> {
       return;
     }
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Fotos offline removidas.')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Fotos offline removidas.'),
+      ),
+    );
   }
 
   Widget resumoCard({
@@ -9619,7 +9321,9 @@ class _SincronizacaoPageState extends State<SincronizacaoPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(
+          color: const Color(0xFFE2E8F0),
+        ),
         boxShadow: const [
           BoxShadow(
             color: Color(0x0A000000),
@@ -9637,7 +9341,10 @@ class _SincronizacaoPageState extends State<SincronizacaoPage> {
               color: color.withOpacity(0.12),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Icon(icon, color: color),
+            child: Icon(
+              icon,
+              color: color,
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -9680,7 +9387,9 @@ class _SincronizacaoPageState extends State<SincronizacaoPage> {
       decoration: BoxDecoration(
         color: const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(
+          color: const Color(0xFFE2E8F0),
+        ),
       ),
       child: Row(
         children: [
@@ -9695,7 +9404,10 @@ class _SincronizacaoPageState extends State<SincronizacaoPage> {
             ),
           ),
           const SizedBox(width: 12),
-          Icon(icon, color: const Color(0xFF1D4ED8)),
+          Icon(
+            icon,
+            color: const Color(0xFF1D4ED8),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -9703,7 +9415,9 @@ class _SincronizacaoPageState extends State<SincronizacaoPage> {
               children: [
                 Text(
                   titulo,
-                  style: const TextStyle(fontWeight: FontWeight.w900),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
                 const SizedBox(height: 3),
                 Text(
@@ -9731,12 +9445,18 @@ class _SincronizacaoPageState extends State<SincronizacaoPage> {
           children: [
             const Row(
               children: [
-                Icon(Icons.cloud_sync_outlined, color: Color(0xFF1D4ED8)),
+                Icon(
+                  Icons.cloud_sync_outlined,
+                  color: Color(0xFF1D4ED8),
+                ),
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'Plano de sincronização',
-                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 18,
+                    ),
                   ),
                 ),
               ],
@@ -9744,7 +9464,10 @@ class _SincronizacaoPageState extends State<SincronizacaoPage> {
             const SizedBox(height: 10),
             const Text(
               'Antes de ir para campo, escolha a quantidade de diários, sincronize e baixe as fotos necessárias dentro de cada diário.',
-              style: TextStyle(color: Color(0xFF64748B), height: 1.35),
+              style: TextStyle(
+                color: Color(0xFF64748B),
+                height: 1.35,
+              ),
             ),
             const SizedBox(height: 14),
             DropdownButtonFormField<int>(
@@ -9781,7 +9504,9 @@ class _SincronizacaoPageState extends State<SincronizacaoPage> {
               height: 52,
               child: FilledButton.icon(
                 onPressed: sincronizando ? null : sincronizarAgora,
-                icon: Icon(sincronizando ? Icons.hourglass_empty : Icons.sync),
+                icon: Icon(
+                  sincronizando ? Icons.hourglass_empty : Icons.sync,
+                ),
                 label: Text(
                   sincronizando
                       ? 'Sincronizando...'
@@ -9796,9 +9521,7 @@ class _SincronizacaoPageState extends State<SincronizacaoPage> {
               child: OutlinedButton.icon(
                 onPressed: limpandoCache ? null : limparCacheFotos,
                 icon: Icon(
-                  limpandoCache
-                      ? Icons.hourglass_empty
-                      : Icons.cleaning_services_outlined,
+                  limpandoCache ? Icons.hourglass_empty : Icons.cleaning_services_outlined,
                 ),
                 label: Text(
                   limpandoCache ? 'Limpando...' : 'Limpar fotos offline',
@@ -9815,7 +9538,9 @@ class _SincronizacaoPageState extends State<SincronizacaoPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(title: const Text('Sincronização')),
+      appBar: AppBar(
+        title: const Text('Sincronização'),
+      ),
       body: RefreshIndicator(
         onRefresh: carregarResumo,
         child: ListView(
@@ -9826,7 +9551,10 @@ class _SincronizacaoPageState extends State<SincronizacaoPage> {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF0F172A), Color(0xFF2563EB)],
+                  colors: [
+                    Color(0xFF0F172A),
+                    Color(0xFF2563EB),
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -9880,7 +9608,9 @@ class _SincronizacaoPageState extends State<SincronizacaoPage> {
               const Card(
                 child: Padding(
                   padding: EdgeInsets.all(18),
-                  child: Center(child: CircularProgressIndicator()),
+                  child: Center(
+                    child: CircularProgressIndicator(),
+                  ),
                 ),
               )
             else ...[
@@ -9894,8 +9624,7 @@ class _SincronizacaoPageState extends State<SincronizacaoPage> {
               resumoCard(
                 icon: Icons.photo_library_outlined,
                 titulo: 'Fotos salvas offline',
-                valor:
-                    '$fotosOffline foto(s) • ${formatarTamanho(tamanhoCacheBytes)}',
+                valor: '$fotosOffline foto(s) • ${formatarTamanho(tamanhoCacheBytes)}',
                 color: const Color(0xFF7C3AED),
               ),
               const SizedBox(height: 10),
@@ -10007,29 +9736,25 @@ class _SincronizacaoPageState extends State<SincronizacaoPage> {
                     etapaCard(
                       numero: '1',
                       titulo: 'Sincronize os diários',
-                      descricao:
-                          'Atualiza a lista de registros disponíveis no celular.',
+                      descricao: 'Atualiza a lista de registros disponíveis no celular.',
                       icon: Icons.description_outlined,
                     ),
                     etapaCard(
                       numero: '2',
                       titulo: 'Abra os diários necessários',
-                      descricao:
-                          'Confira detalhes, serviços, materiais e equipamentos.',
+                      descricao: 'Confira detalhes, serviços, materiais e equipamentos.',
                       icon: Icons.fact_check_outlined,
                     ),
                     etapaCard(
                       numero: '3',
                       titulo: 'Baixe as fotos',
-                      descricao:
-                          'Use o botão desta tela para baixar todas, ou baixe por diário na galeria.',
+                      descricao: 'Use o botão desta tela para baixar todas, ou baixe por diário na galeria.',
                       icon: Icons.download_for_offline_outlined,
                     ),
                     etapaCard(
                       numero: '4',
                       titulo: 'Teste sem internet',
-                      descricao:
-                          'Desligue a conexão e valide se os dados ficaram salvos.',
+                      descricao: 'Desligue a conexão e valide se os dados ficaram salvos.',
                       icon: Icons.signal_wifi_off_outlined,
                     ),
                   ],
@@ -10084,7 +9809,13 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
   int tamanhoCacheBytes = 0;
   late int limiteSelecionado;
 
-  final List<int> opcoesLimiteSincronizacao = const [10, 50, 100, 300, 500];
+  final List<int> opcoesLimiteSincronizacao = const [
+    10,
+    50,
+    100,
+    300,
+    500,
+  ];
 
   @override
   void initState() {
@@ -10141,7 +9872,9 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Sincronizando últimos $novoLimite diário(s).')),
+        SnackBar(
+          content: Text('Sincronizando últimos $novoLimite diário(s).'),
+        ),
       );
     } catch (_) {
       if (!mounted) {
@@ -10175,9 +9908,11 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
         return;
       }
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Sincronização concluída.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Sincronização concluída.'),
+        ),
+      );
     } catch (_) {
       if (!mounted) {
         return;
@@ -10249,9 +9984,11 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
       return;
     }
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Cache de fotos limpo.')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Cache de fotos limpo.'),
+      ),
+    );
   }
 
   Future<void> sairDoApp() async {
@@ -10271,7 +10008,9 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(
+          color: const Color(0xFFE2E8F0),
+        ),
         boxShadow: const [
           BoxShadow(
             color: Color(0x0A000000),
@@ -10289,7 +10028,10 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
               color: color.withOpacity(0.12),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Icon(icon, color: color),
+            child: Icon(
+              icon,
+              color: color,
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -10328,7 +10070,9 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(
+          color: const Color(0xFFE2E8F0),
+        ),
         boxShadow: const [
           BoxShadow(
             color: Color(0x0A000000),
@@ -10342,12 +10086,18 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
         children: [
           const Row(
             children: [
-              Icon(Icons.tune, color: Color(0xFF1D4ED8)),
+              Icon(
+                Icons.tune,
+                color: Color(0xFF1D4ED8),
+              ),
               SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'Quantidade de diários para sincronizar',
-                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16,
+                  ),
                 ),
               ),
             ],
@@ -10355,7 +10105,10 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
           const SizedBox(height: 8),
           const Text(
             'Escolha quantos diários recentes o app deve buscar e manter disponíveis offline.',
-            style: TextStyle(color: Color(0xFF64748B), height: 1.3),
+            style: TextStyle(
+              color: Color(0xFF64748B),
+              height: 1.3,
+            ),
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<int>(
@@ -10443,7 +10196,11 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
   }) {
     final child = Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: [Icon(icon), const SizedBox(width: 8), Text(label)],
+      children: [
+        Icon(icon),
+        const SizedBox(width: 8),
+        Text(label),
+      ],
     );
 
     if (outlined) {
@@ -10469,7 +10226,9 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
       child: FilledButton(
         onPressed: onPressed,
         style: danger
-            ? FilledButton.styleFrom(backgroundColor: const Color(0xFFB91C1C))
+            ? FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFB91C1C),
+              )
             : null,
         child: child,
       ),
@@ -10484,7 +10243,9 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(title: const Text('Central do App')),
+      appBar: AppBar(
+        title: const Text('Central do App'),
+      ),
       body: RefreshIndicator(
         onRefresh: carregarResumo,
         child: ListView(
@@ -10495,7 +10256,10 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF0F172A), Color(0xFF1D4ED8)],
+                  colors: [
+                    Color(0xFF0F172A),
+                    Color(0xFF1D4ED8),
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -10549,7 +10313,9 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
               const Card(
                 child: Padding(
                   padding: EdgeInsets.all(18),
-                  child: Center(child: CircularProgressIndicator()),
+                  child: Center(
+                    child: CircularProgressIndicator(),
+                  ),
                 ),
               )
             else ...[
@@ -10567,8 +10333,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
               infoCard(
                 icon: Icons.photo_library_outlined,
                 titulo: 'Fotos salvas offline',
-                valor:
-                    '$fotosOffline foto(s) • ${formatarTamanho(tamanhoCacheBytes)}',
+                valor: '$fotosOffline foto(s) • ${formatarTamanho(tamanhoCacheBytes)}',
                 color: const Color(0xFF7C3AED),
               ),
               infoCard(
@@ -10610,16 +10375,12 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
             const SizedBox(height: 10),
             actionButton(
               icon: sincronizando ? Icons.hourglass_empty : Icons.sync,
-              label: sincronizando
-                  ? 'Sincronizando...'
-                  : 'Sincronizar últimos $limiteSelecionado',
+              label: sincronizando ? 'Sincronizando...' : 'Sincronizar últimos $limiteSelecionado',
               onPressed: sincronizando ? null : sincronizarAgora,
             ),
             const SizedBox(height: 10),
             actionButton(
-              icon: limpandoCache
-                  ? Icons.hourglass_empty
-                  : Icons.cleaning_services_outlined,
+              icon: limpandoCache ? Icons.hourglass_empty : Icons.cleaning_services_outlined,
               label: limpandoCache ? 'Limpando...' : 'Limpar fotos offline',
               onPressed: limpandoCache ? null : confirmarLimpezaCache,
               outlined: true,
@@ -10635,7 +10396,10 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
             const SizedBox(height: 18),
             const Text(
               'Dica: antes de ir para campo, sincronize os diários e baixe as fotos necessárias ainda com internet.',
-              style: TextStyle(color: Color(0xFF64748B), height: 1.35),
+              style: TextStyle(
+                color: Color(0xFF64748B),
+                height: 1.35,
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -10840,31 +10604,35 @@ class _FotoCacheImageState extends State<FotoCacheImage> {
       return content;
     }
 
-    return ClipRRect(borderRadius: widget.borderRadius!, child: content);
+    return ClipRRect(
+      borderRadius: widget.borderRadius!,
+      child: content,
+    );
   }
 
   Widget _erro() {
-    final iconColor = widget.errorDarkMode
-        ? Colors.white
-        : const Color(0xFFEA580C);
-    final textColor = widget.errorDarkMode
-        ? Colors.white
-        : const Color(0xFF9A3412);
-    final bgColor = widget.errorDarkMode
-        ? Colors.black
-        : const Color(0xFFFFF7ED);
+    final iconColor = widget.errorDarkMode ? Colors.white : const Color(0xFFEA580C);
+    final textColor = widget.errorDarkMode ? Colors.white : const Color(0xFF9A3412);
+    final bgColor = widget.errorDarkMode ? Colors.black : const Color(0xFFFFF7ED);
 
     return _containerBase(
       color: bgColor,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.image_not_supported_outlined, size: 42, color: iconColor),
+          Icon(
+            Icons.image_not_supported_outlined,
+            size: 42,
+            color: iconColor,
+          ),
           const SizedBox(height: 8),
           Text(
             'Imagem indisponível offline',
             textAlign: TextAlign.center,
-            style: TextStyle(color: textColor, fontWeight: FontWeight.w800),
+            style: TextStyle(
+              color: textColor,
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ],
       ),
@@ -10873,7 +10641,9 @@ class _FotoCacheImageState extends State<FotoCacheImage> {
 
   Widget _loading() {
     return _containerBase(
-      child: CircularProgressIndicator(color: widget.loadingColor),
+      child: CircularProgressIndicator(
+        color: widget.loadingColor,
+      ),
     );
   }
 
@@ -10903,7 +10673,10 @@ class _FotoCacheImageState extends State<FotoCacheImage> {
           return image;
         }
 
-        return ClipRRect(borderRadius: widget.borderRadius!, child: image);
+        return ClipRRect(
+          borderRadius: widget.borderRadius!,
+          child: image,
+        );
       },
     );
   }
@@ -10979,7 +10752,9 @@ class _LinhaInfo extends StatelessWidget {
             child: Text(
               valor,
               textAlign: TextAlign.right,
-              style: const TextStyle(fontWeight: FontWeight.w700),
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ],

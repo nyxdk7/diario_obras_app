@@ -5747,12 +5747,11 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
         obraNomeSelecionada = rascunho.obraNome!.trim();
       }
 
-      final dataRascunho = textoJson(
+      dataController.text = textoJson(
         map,
         'data_diario',
         padrao: rascunho.dataDiario ?? dataController.text,
       );
-      dataController.text = dataDiarioParaTela(dataRascunho);
       equipeController.text = textoJson(
         map,
         'equipe',
@@ -6043,98 +6042,6 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
     );
   }
 
-  String dataDiarioParaTela(String valor) {
-    final texto = valor.trim();
-
-    if (texto.isEmpty) {
-      return texto;
-    }
-
-    final iso = RegExp(r'^(\d{4})-(\d{2})-(\d{2})$').firstMatch(texto);
-
-    if (iso != null) {
-      final ano = iso.group(1)!;
-      final mes = iso.group(2)!;
-      final dia = iso.group(3)!;
-      return '$dia/$mes/$ano';
-    }
-
-    final br = RegExp(r'^(\d{2})/(\d{2})/(\d{4})$').firstMatch(texto);
-
-    if (br != null) {
-      return texto;
-    }
-
-    try {
-      final data = DateTime.parse(texto);
-      final dia = data.day.toString().padLeft(2, '0');
-      final mes = data.month.toString().padLeft(2, '0');
-      final ano = data.year.toString();
-
-      return '$dia/$mes/$ano';
-    } catch (_) {
-      return texto;
-    }
-  }
-
-  String dataDiarioParaApi(String valor) {
-    final texto = valor.trim();
-
-    final br = RegExp(r'^(\d{2})/(\d{2})/(\d{4})$').firstMatch(texto);
-
-    if (br != null) {
-      final dia = br.group(1)!;
-      final mes = br.group(2)!;
-      final ano = br.group(3)!;
-      return '$ano-$mes-$dia';
-    }
-
-    return texto;
-  }
-
-  String? validarDataDiario(String? valor) {
-    final texto = valor?.trim() ?? '';
-
-    if (texto.isEmpty) {
-      return 'Campo obrigatório';
-    }
-
-    final br = RegExp(r'^(\d{2})/(\d{2})/(\d{4})$').firstMatch(texto);
-    final iso = RegExp(r'^(\d{4})-(\d{2})-(\d{2})$').firstMatch(texto);
-
-    int? dia;
-    int? mes;
-    int? ano;
-
-    if (br != null) {
-      dia = int.tryParse(br.group(1)!);
-      mes = int.tryParse(br.group(2)!);
-      ano = int.tryParse(br.group(3)!);
-    } else if (iso != null) {
-      ano = int.tryParse(iso.group(1)!);
-      mes = int.tryParse(iso.group(2)!);
-      dia = int.tryParse(iso.group(3)!);
-    } else {
-      return 'Use o formato DD/MM/AAAA';
-    }
-
-    if (dia == null || mes == null || ano == null) {
-      return 'Data inválida';
-    }
-
-    try {
-      final data = DateTime(ano, mes, dia);
-
-      if (data.day != dia || data.month != mes || data.year != ano) {
-        return 'Data inválida';
-      }
-    } catch (_) {
-      return 'Data inválida';
-    }
-
-    return null;
-  }
-
   @override
   void initState() {
     super.initState();
@@ -6147,7 +6054,7 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
     final mes = agora.month.toString().padLeft(2, '0');
     final ano = agora.year.toString();
 
-    dataController.text = '$dia/$mes/$ano';
+    dataController.text = '$ano-$mes-$dia';
     condicaoOperacaoController.text = 'Praticável';
 
     carregarRascunhoExistente();
@@ -6234,7 +6141,7 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
     final dados = {
       'obra_id': obraIdSelecionada,
       'obra_nome': obraNomeSelecionada,
-      'data_diario': dataDiarioParaApi(dataController.text.trim()),
+      'data_diario': dataController.text.trim(),
       'equipe': equipeController.text.trim(),
 
       // Campos DNIT compatíveis com o Flask.
@@ -7721,9 +7628,9 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
                 campoTexto(
                   controller: dataController,
                   label: 'Data do diário',
-                  hint: 'DD/MM/AAAA',
+                  hint: 'AAAA-MM-DD',
                   icon: Icons.calendar_month_outlined,
-                  validator: validarDataDiario,
+                  validator: obrigatorio,
                 ),
                 campoTexto(
                   controller: equipeController,

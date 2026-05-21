@@ -8,6 +8,24 @@ import 'package:path_provider/path_provider.dart';
 
 part 'app_database.g.dart';
 
+class LocalObras extends Table {
+  IntColumn get id => integer()();
+
+  TextColumn get nome => text()();
+  TextColumn get lote => text().nullable()();
+  TextColumn get contratante => text().nullable()();
+  TextColumn get localizacao => text().nullable()();
+  TextColumn get dataInicio => text().nullable()();
+  TextColumn get engenheiroResponsavel => text().nullable()();
+
+  TextColumn get jsonCompleto => text()();
+
+  DateTimeColumn get sincronizadoEm => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 class LocalDiarios extends Table {
   IntColumn get id => integer()();
 
@@ -38,7 +56,9 @@ class SyncMetadados extends Table {
 class RascunhosDiarios extends Table {
   IntColumn get id => integer().autoIncrement()();
 
-  TextColumn get obraNome => text()();
+  IntColumn get obraId => integer().nullable()();
+  TextColumn get obraNome => text().nullable()();
+
   TextColumn get dataDiario => text().nullable()();
   TextColumn get equipe => text().nullable()();
   TextColumn get clima => text().nullable()();
@@ -57,6 +77,7 @@ class RascunhosDiarios extends Table {
 
 @DriftDatabase(
   tables: [
+    LocalObras,
     LocalDiarios,
     SyncMetadados,
     RascunhosDiarios,
@@ -66,7 +87,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_abrirConexao());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration {
@@ -78,8 +99,101 @@ class AppDatabase extends _$AppDatabase {
         if (from < 2) {
           await m.createTable(rascunhosDiarios);
         }
+
+        if (from < 3) {
+          await m.createTable(localObras);
+
+          final migrator = m;
+
+          try {
+            await migrator.addColumn(
+              rascunhosDiarios,
+              rascunhosDiarios.obraId,
+            );
+          } catch (_) {
+            // Coluna já existe em algum ambiente de teste.
+          }
+
+          try {
+            await migrator.addColumn(
+              rascunhosDiarios,
+              rascunhosDiarios.obraNome,
+            );
+          } catch (_) {
+            // Coluna já existe em algum ambiente de teste.
+          }
+        }
       },
     );
+  }
+
+  Future<void> salvarObras(List<Map<String, dynamic>> obras) async {
+    final agora = DateTime.now();
+
+    if (obras.isEmpty) {
+      await _salvarMetadado(
+        'ultima_sincronizacao_obras',
+        agora.toIso8601String(),
+      );
+
+      await _salvarMetadado('total_obras_local', '0');
+      return;
+    }
+
+    await batch((batch) {
+      batch.insertAllOnConflictUpdate(
+        localObras,
+        obras.map((obra) {
+          return LocalObrasCompanion(
+            id: Value(_intOuZero(obra['id'])),
+            nome: Value(_textoOuNull(obra['nome']) ?? 'Obra sem nome'),
+            lote: Value(_textoOuNull(obra['lote'])),
+            contratante: Value(_textoOuNull(obra['contratante'])),
+            localizacao: Value(_textoOuNull(obra['localizacao'])),
+            dataInicio: Value(_textoOuNull(obra['data_inicio'])),
+            engenheiroResponsavel: Value(
+              _textoOuNull(obra['engenheiro_responsavel']),
+            ),
+            jsonCompleto: Value(_jsonEncodeSeguro(obra)),
+            sincronizadoEm: Value(agora),
+          );
+        }).toList(),
+      );
+    });
+
+    final totalLocal = await contarObrasSalvas();
+
+    await _salvarMetadado(
+      'ultima_sincronizacao_obras',
+      agora.toIso8601String(),
+    );
+
+    await _salvarMetadado(
+      'total_obras_local',
+      totalLocal.toString(),
+    );
+  }
+
+  Future<List<LocalObra>> listarObrasLocais() {
+    return (select(localObras)
+          ..orderBy([
+            (t) => OrderingTerm.asc(t.nome),
+            (t) => OrderingTerm.asc(t.id),
+          ]))
+        .get();
+  }
+
+  Future<LocalObra?> buscarObraLocalPorId(int id) {
+    return (select(localObras)..where((t) => t.id.equals(id)))
+        .getSingleOrNull();
+  }
+
+  Future<int> contarObrasSalvas() async {
+    final countExpression = localObras.id.count();
+    final query = selectOnly(localObras)..addColumns([countExpression]);
+    final row = await query.getSingle();
+
+    return row.read(countExpression) ?? 0;
   }
 
   Future<void> salvarDiarios(List<Map<String, dynamic>> diarios) {
@@ -239,8 +353,15 @@ class AppDatabase extends _$AppDatabase {
     required DateTime criadoEm,
     required DateTime atualizadoEm,
   }) {
+    final obraId = _intOuNull(dados['obra_id']);
+
+    final obraNome = _textoOuNull(dados['obra_nome']) ??
+        _textoOuNull(dados['nome_obra']) ??
+        _textoOuNull(dados['obra']);
+
     return RascunhosDiariosCompanion(
-      obraNome: Value(_textoOuNull(dados['obra_nome']) ?? 'Obra não informada'),
+      obraId: Value(obraId),
+      obraNome: Value(obraNome ?? 'Obra não informada'),
       dataDiario: Value(_textoOuNull(dados['data_diario'])),
       equipe: Value(_textoOuNull(dados['equipe'])),
       clima: Value(

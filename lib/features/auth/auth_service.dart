@@ -46,6 +46,7 @@ class AuthService {
 
       final usuario = data['usuario'];
       final obra = data['obra'];
+      final obras = _extrairListaObras(data);
 
       if (usuario is Map) {
         await storage.write(
@@ -61,10 +62,23 @@ class AuthService {
         );
       }
 
-      if (obra is Map) {
+      if (obras.isNotEmpty) {
+        await database.salvarObras(obras);
+
+        final primeiraObra = obras.first;
+
         await storage.write(
           key: _nomeObraKey,
-          value: obra['nome']?.toString() ?? 'Obra vinculada',
+          value: primeiraObra['nome']?.toString() ?? 'Obra vinculada',
+        );
+      } else if (obra is Map) {
+        final obraMap = Map<String, dynamic>.from(obra);
+
+        await database.salvarObras([obraMap]);
+
+        await storage.write(
+          key: _nomeObraKey,
+          value: obraMap['nome']?.toString() ?? 'Obra vinculada',
         );
       }
     }
@@ -109,7 +123,32 @@ class AuthService {
     }
 
     final response = await apiClient.me(token);
-    return Map<String, dynamic>.from(response.data);
+    final data = Map<String, dynamic>.from(response.data);
+
+    if (data['ok'] == true) {
+      final obras = _extrairListaObras(data);
+      final obra = data['obra'];
+
+      if (obras.isNotEmpty) {
+        await database.salvarObras(obras);
+
+        await storage.write(
+          key: _nomeObraKey,
+          value: obras.first['nome']?.toString() ?? 'Obra vinculada',
+        );
+      } else if (obra is Map) {
+        final obraMap = Map<String, dynamic>.from(obra);
+
+        await database.salvarObras([obraMap]);
+
+        await storage.write(
+          key: _nomeObraKey,
+          value: obraMap['nome']?.toString() ?? 'Obra vinculada',
+        );
+      }
+    }
+
+    return data;
   }
 
   Future<Map<String, dynamic>?> sync({int limite = 300}) async {
@@ -121,6 +160,29 @@ class AuthService {
 
     final response = await apiClient.sync(token, limite: limite);
     final data = Map<String, dynamic>.from(response.data);
+
+    if (data['ok'] == true) {
+      final obras = _extrairListaObras(data);
+      final obra = data['obra'];
+
+      if (obras.isNotEmpty) {
+        await database.salvarObras(obras);
+
+        await storage.write(
+          key: _nomeObraKey,
+          value: obras.first['nome']?.toString() ?? 'Obra vinculada',
+        );
+      } else if (obra is Map) {
+        final obraMap = Map<String, dynamic>.from(obra);
+
+        await database.salvarObras([obraMap]);
+
+        await storage.write(
+          key: _nomeObraKey,
+          value: obraMap['nome']?.toString() ?? 'Obra vinculada',
+        );
+      }
+    }
 
     if (data['ok'] == true && data['diarios'] is List) {
       final diarios = (data['diarios'] as List)
@@ -134,16 +196,26 @@ class AuthService {
       );
 
       final totalLocal = await database.contarDiariosSalvos();
+      final totalObras = await database.contarObrasSalvas();
 
       data['sincronizacao_incremental'] = {
         'recebidos_api': diarios.length,
         'total_local': totalLocal,
+        'total_obras_local': totalObras,
         'limite_solicitado': limite,
         'modo': 'incremental_upsert',
       };
     }
 
     return data;
+  }
+
+  Future<List<LocalObra>> listarObrasLocais() {
+    return database.listarObrasLocais();
+  }
+
+  Future<int> contarObrasLocais() {
+    return database.contarObrasSalvas();
   }
 
   Future<List<LocalDiario>> listarDiariosLocais({int? limite}) {
@@ -235,8 +307,26 @@ class AuthService {
       jsonDecode(rascunho.jsonCompleto) as Map,
     );
 
+    if (rascunho.obraId != null && dados['obra_id'] == null) {
+      dados['obra_id'] = rascunho.obraId;
+    }
+
+    if ((dados['obra_nome'] == null ||
+            dados['obra_nome'].toString().trim().isEmpty) &&
+        rascunho.obraNome != null &&
+        rascunho.obraNome!.trim().isNotEmpty) {
+      dados['obra_nome'] = rascunho.obraNome;
+    }
+
     final fotos = extrairCaminhosFotos(dados);
     final payload = payloadSemFotos(dados);
+
+    if (payload['obra_id'] == null ||
+        payload['obra_id'].toString().trim().isEmpty) {
+      throw Exception(
+        'Obra não encontrada no rascunho. Abra o lançamento e selecione a obra novamente.',
+      );
+    }
 
     final response = await apiClient.criarDiarioMobile(
       token,
@@ -249,7 +339,8 @@ class AuthService {
       throw Exception(data['erro']?.toString() ?? 'Erro ao enviar diário.');
     }
 
-    final diarioId = data['id'] ?? (data['diario'] is Map ? data['diario']['id'] : null);
+    final diarioId =
+        data['id'] ?? (data['diario'] is Map ? data['diario']['id'] : null);
     final diarioIdInt = int.tryParse(diarioId?.toString() ?? '');
 
     if (diarioIdInt != null && fotos.isNotEmpty) {
@@ -287,7 +378,6 @@ class AuthService {
 
     return data;
   }
-
 
   Future<List<RascunhosDiario>> listarRascunhosDiarios() {
     return database.listarRascunhosDiarios();
@@ -339,7 +429,6 @@ class AuthService {
     return Map<String, dynamic>.from(response.data);
   }
 
-
   Future<Map<String, dynamic>?> listarPendenciasMobile({
     int limite = 100,
   }) async {
@@ -356,7 +445,6 @@ class AuthService {
 
     return Map<String, dynamic>.from(response.data);
   }
-
 
   Future<Map<String, dynamic>> aprovarEdicaoDiarioMobile(
     int diarioId, {
@@ -396,7 +484,6 @@ class AuthService {
     return Map<String, dynamic>.from(response.data);
   }
 
-
   Future<Map<String, dynamic>> aprovarExclusaoDiarioMobile(
     int diarioId,
   ) async {
@@ -432,7 +519,6 @@ class AuthService {
 
     return Map<String, dynamic>.from(response.data);
   }
-
 
   Future<Map<String, dynamic>> solicitarEdicaoDiarioMobile(
     int diarioId, {
@@ -472,4 +558,23 @@ class AuthService {
     return Map<String, dynamic>.from(response.data);
   }
 
+  List<Map<String, dynamic>> _extrairListaObras(Map<String, dynamic> data) {
+    final obras = data['obras'];
+
+    if (obras is List) {
+      return obras
+          .whereType<Map>()
+          .map((item) => Map<String, dynamic>.from(item))
+          .where((item) => item['id'] != null)
+          .toList();
+    }
+
+    final obra = data['obra'];
+
+    if (obra is Map && obra['id'] != null) {
+      return [Map<String, dynamic>.from(obra)];
+    }
+
+    return [];
+  }
 }

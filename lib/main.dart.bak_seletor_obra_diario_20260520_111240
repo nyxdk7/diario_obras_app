@@ -5577,11 +5577,6 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
   String climaTardeSelecionado = 'Bom';
   bool houveAcidente = false;
   bool salvando = false;
-  bool carregandoObrasFormulario = false;
-
-  int? obraIdSelecionada;
-  String obraNomeSelecionada = '';
-  List<LocalObra> obrasLocaisFormulario = [];
 
   final List<Map<String, dynamic>> servicos = [];
   final List<Map<String, dynamic>> materiais = [];
@@ -5732,27 +5727,11 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
 
       final map = Map<String, dynamic>.from(dados);
 
-      final obraIdJson = int.tryParse(map['obra_id']?.toString() ?? '');
-      final obraNomeJson = textoJson(map, 'obra_nome');
-
-      if (obraIdJson != null) {
-        obraIdSelecionada = obraIdJson;
-      } else if (rascunho.obraId != null) {
-        obraIdSelecionada = rascunho.obraId;
-      }
-
-      if (obraNomeJson.isNotEmpty) {
-        obraNomeSelecionada = obraNomeJson;
-      } else if ((rascunho.obraNome ?? '').trim().isNotEmpty) {
-        obraNomeSelecionada = rascunho.obraNome!.trim();
-      }
-
-      final dataRascunho = textoJson(
+      dataController.text = textoJson(
         map,
         'data_diario',
         padrao: rascunho.dataDiario ?? dataController.text,
       );
-      dataController.text = dataDiarioParaTela(dataRascunho);
       equipeController.text = textoJson(
         map,
         'equipe',
@@ -5884,274 +5863,19 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
     }
   }
 
-  Future<void> carregarObrasFormulario() async {
-    if (mounted) {
-      setState(() {
-        carregandoObrasFormulario = true;
-      });
-    }
-
-    try {
-      final obras = await authService.listarObrasLocais();
-
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        obrasLocaisFormulario = obras;
-
-        if (obrasLocaisFormulario.isNotEmpty) {
-          final existeSelecionada =
-              obraIdSelecionada != null &&
-              obrasLocaisFormulario.any((obra) => obra.id == obraIdSelecionada);
-
-          if (!existeSelecionada) {
-            LocalObra? porNome;
-
-            for (final obra in obrasLocaisFormulario) {
-              if (obra.nome.trim().toLowerCase() ==
-                  obraNomeSelecionada.trim().toLowerCase()) {
-                porNome = obra;
-                break;
-              }
-            }
-
-            final escolhida = porNome ?? obrasLocaisFormulario.first;
-            obraIdSelecionada = escolhida.id;
-            obraNomeSelecionada = escolhida.nome;
-          } else {
-            final escolhida = obrasLocaisFormulario.firstWhere(
-              (obra) => obra.id == obraIdSelecionada,
-            );
-            obraNomeSelecionada = escolhida.nome;
-          }
-        }
-
-        carregandoObrasFormulario = false;
-      });
-    } catch (_) {
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        carregandoObrasFormulario = false;
-      });
-    }
-  }
-
-  Widget seletorObraFormulario() {
-    if (carregandoObrasFormulario) {
-      return Container(
-        width: double.infinity,
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF8FAFC),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
-        ),
-        child: const Row(
-          children: [
-            SizedBox(
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-            SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'Carregando obras vinculadas...',
-                style: TextStyle(
-                  color: Color(0xFF64748B),
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (obrasLocaisFormulario.isEmpty) {
-      return Container(
-        width: double.infinity,
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: const Color(0xFFFFFBEB),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFFDE68A)),
-        ),
-        child: const Text(
-          'Nenhuma obra vinculada encontrada no app. Sincronize novamente antes de lançar.',
-          style: TextStyle(
-            color: Color(0xFF92400E),
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-      );
-    }
-
-    final valorAtual =
-        obraIdSelecionada != null &&
-            obrasLocaisFormulario.any((obra) => obra.id == obraIdSelecionada)
-        ? obraIdSelecionada
-        : null;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: DropdownButtonFormField<int>(
-        value: valorAtual,
-        isExpanded: true,
-        validator: (valor) {
-          if (valor == null) {
-            return 'Selecione o contrato/obra';
-          }
-
-          return null;
-        },
-        decoration: InputDecoration(
-          labelText: 'Contrato / obra',
-          prefixIcon: const Icon(Icons.business_outlined),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(18)),
-          filled: true,
-          fillColor: Colors.white,
-        ),
-        items: obrasLocaisFormulario.map((obra) {
-          return DropdownMenuItem<int>(
-            value: obra.id,
-            child: Text(obra.nome, overflow: TextOverflow.ellipsis),
-          );
-        }).toList(),
-        onChanged: (valor) {
-          if (valor == null) {
-            return;
-          }
-
-          final obra = obrasLocaisFormulario.firstWhere(
-            (item) => item.id == valor,
-          );
-
-          setState(() {
-            obraIdSelecionada = obra.id;
-            obraNomeSelecionada = obra.nome;
-          });
-        },
-      ),
-    );
-  }
-
-  String dataDiarioParaTela(String valor) {
-    final texto = valor.trim();
-
-    if (texto.isEmpty) {
-      return texto;
-    }
-
-    final iso = RegExp(r'^(\d{4})-(\d{2})-(\d{2})$').firstMatch(texto);
-
-    if (iso != null) {
-      final ano = iso.group(1)!;
-      final mes = iso.group(2)!;
-      final dia = iso.group(3)!;
-      return '$dia/$mes/$ano';
-    }
-
-    final br = RegExp(r'^(\d{2})/(\d{2})/(\d{4})$').firstMatch(texto);
-
-    if (br != null) {
-      return texto;
-    }
-
-    try {
-      final data = DateTime.parse(texto);
-      final dia = data.day.toString().padLeft(2, '0');
-      final mes = data.month.toString().padLeft(2, '0');
-      final ano = data.year.toString();
-
-      return '$dia/$mes/$ano';
-    } catch (_) {
-      return texto;
-    }
-  }
-
-  String dataDiarioParaApi(String valor) {
-    final texto = valor.trim();
-
-    final br = RegExp(r'^(\d{2})/(\d{2})/(\d{4})$').firstMatch(texto);
-
-    if (br != null) {
-      final dia = br.group(1)!;
-      final mes = br.group(2)!;
-      final ano = br.group(3)!;
-      return '$ano-$mes-$dia';
-    }
-
-    return texto;
-  }
-
-  String? validarDataDiario(String? valor) {
-    final texto = valor?.trim() ?? '';
-
-    if (texto.isEmpty) {
-      return 'Campo obrigatório';
-    }
-
-    final br = RegExp(r'^(\d{2})/(\d{2})/(\d{4})$').firstMatch(texto);
-    final iso = RegExp(r'^(\d{4})-(\d{2})-(\d{2})$').firstMatch(texto);
-
-    int? dia;
-    int? mes;
-    int? ano;
-
-    if (br != null) {
-      dia = int.tryParse(br.group(1)!);
-      mes = int.tryParse(br.group(2)!);
-      ano = int.tryParse(br.group(3)!);
-    } else if (iso != null) {
-      ano = int.tryParse(iso.group(1)!);
-      mes = int.tryParse(iso.group(2)!);
-      dia = int.tryParse(iso.group(3)!);
-    } else {
-      return 'Use o formato DD/MM/AAAA';
-    }
-
-    if (dia == null || mes == null || ano == null) {
-      return 'Data inválida';
-    }
-
-    try {
-      final data = DateTime(ano, mes, dia);
-
-      if (data.day != dia || data.month != mes || data.year != ano) {
-        return 'Data inválida';
-      }
-    } catch (_) {
-      return 'Data inválida';
-    }
-
-    return null;
-  }
-
   @override
   void initState() {
     super.initState();
-
-    obraIdSelecionada = widget.rascunhoExistente?.obraId ?? widget.obraId;
-    obraNomeSelecionada = widget.rascunhoExistente?.obraNome ?? widget.obraNome;
 
     final agora = DateTime.now();
     final dia = agora.day.toString().padLeft(2, '0');
     final mes = agora.month.toString().padLeft(2, '0');
     final ano = agora.year.toString();
 
-    dataController.text = '$dia/$mes/$ano';
+    dataController.text = '$ano-$mes-$dia';
     condicaoOperacaoController.text = 'Praticável';
 
     carregarRascunhoExistente();
-    carregarObrasFormulario();
   }
 
   @override
@@ -6208,11 +5932,6 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
       return;
     }
 
-    if (obraIdSelecionada == null || obraNomeSelecionada.trim().isEmpty) {
-      mostrarMensagem('Selecione o contrato/obra do diário.');
-      return;
-    }
-
     if (servicos.isEmpty) {
       mostrarMensagem('Adicione pelo menos um serviço executado.');
       return;
@@ -6232,9 +5951,9 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
     final totalEquipamentos = equipamentos.length;
 
     final dados = {
-      'obra_id': obraIdSelecionada,
-      'obra_nome': obraNomeSelecionada,
-      'data_diario': dataDiarioParaApi(dataController.text.trim()),
+      'obra_id': widget.obraId,
+      'obra_nome': widget.obraNome,
+      'data_diario': dataController.text.trim(),
       'equipe': equipeController.text.trim(),
 
       // Campos DNIT compatíveis com o Flask.
@@ -7690,9 +7409,7 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    obraNomeSelecionada.trim().isEmpty
-                        ? widget.obraNome
-                        : obraNomeSelecionada,
+                    widget.obraNome,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 24,
@@ -7717,13 +7434,12 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
               titulo: 'Dados do diário',
               icon: Icons.assignment_outlined,
               children: [
-                seletorObraFormulario(),
                 campoTexto(
                   controller: dataController,
                   label: 'Data do diário',
-                  hint: 'DD/MM/AAAA',
+                  hint: 'AAAA-MM-DD',
                   icon: Icons.calendar_month_outlined,
-                  validator: validarDataDiario,
+                  validator: obrigatorio,
                 ),
                 campoTexto(
                   controller: equipeController,

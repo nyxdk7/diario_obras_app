@@ -3,6 +3,589 @@
 part of 'app_database.dart';
 
 // ignore_for_file: type=lint
+class $LocalObrasTable extends LocalObras
+    with TableInfo<$LocalObrasTable, LocalObra> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LocalObrasTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _nomeMeta = const VerificationMeta('nome');
+  @override
+  late final GeneratedColumn<String> nome = GeneratedColumn<String>(
+    'nome',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _loteMeta = const VerificationMeta('lote');
+  @override
+  late final GeneratedColumn<String> lote = GeneratedColumn<String>(
+    'lote',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _contratanteMeta = const VerificationMeta(
+    'contratante',
+  );
+  @override
+  late final GeneratedColumn<String> contratante = GeneratedColumn<String>(
+    'contratante',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _localizacaoMeta = const VerificationMeta(
+    'localizacao',
+  );
+  @override
+  late final GeneratedColumn<String> localizacao = GeneratedColumn<String>(
+    'localizacao',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _dataInicioMeta = const VerificationMeta(
+    'dataInicio',
+  );
+  @override
+  late final GeneratedColumn<String> dataInicio = GeneratedColumn<String>(
+    'data_inicio',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _engenheiroResponsavelMeta =
+      const VerificationMeta('engenheiroResponsavel');
+  @override
+  late final GeneratedColumn<String> engenheiroResponsavel =
+      GeneratedColumn<String>(
+        'engenheiro_responsavel',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _jsonCompletoMeta = const VerificationMeta(
+    'jsonCompleto',
+  );
+  @override
+  late final GeneratedColumn<String> jsonCompleto = GeneratedColumn<String>(
+    'json_completo',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sincronizadoEmMeta = const VerificationMeta(
+    'sincronizadoEm',
+  );
+  @override
+  late final GeneratedColumn<DateTime> sincronizadoEm =
+      GeneratedColumn<DateTime>(
+        'sincronizado_em',
+        aliasedName,
+        false,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: true,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    nome,
+    lote,
+    contratante,
+    localizacao,
+    dataInicio,
+    engenheiroResponsavel,
+    jsonCompleto,
+    sincronizadoEm,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'local_obras';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LocalObra> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('nome')) {
+      context.handle(
+        _nomeMeta,
+        nome.isAcceptableOrUnknown(data['nome']!, _nomeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nomeMeta);
+    }
+    if (data.containsKey('lote')) {
+      context.handle(
+        _loteMeta,
+        lote.isAcceptableOrUnknown(data['lote']!, _loteMeta),
+      );
+    }
+    if (data.containsKey('contratante')) {
+      context.handle(
+        _contratanteMeta,
+        contratante.isAcceptableOrUnknown(
+          data['contratante']!,
+          _contratanteMeta,
+        ),
+      );
+    }
+    if (data.containsKey('localizacao')) {
+      context.handle(
+        _localizacaoMeta,
+        localizacao.isAcceptableOrUnknown(
+          data['localizacao']!,
+          _localizacaoMeta,
+        ),
+      );
+    }
+    if (data.containsKey('data_inicio')) {
+      context.handle(
+        _dataInicioMeta,
+        dataInicio.isAcceptableOrUnknown(data['data_inicio']!, _dataInicioMeta),
+      );
+    }
+    if (data.containsKey('engenheiro_responsavel')) {
+      context.handle(
+        _engenheiroResponsavelMeta,
+        engenheiroResponsavel.isAcceptableOrUnknown(
+          data['engenheiro_responsavel']!,
+          _engenheiroResponsavelMeta,
+        ),
+      );
+    }
+    if (data.containsKey('json_completo')) {
+      context.handle(
+        _jsonCompletoMeta,
+        jsonCompleto.isAcceptableOrUnknown(
+          data['json_completo']!,
+          _jsonCompletoMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_jsonCompletoMeta);
+    }
+    if (data.containsKey('sincronizado_em')) {
+      context.handle(
+        _sincronizadoEmMeta,
+        sincronizadoEm.isAcceptableOrUnknown(
+          data['sincronizado_em']!,
+          _sincronizadoEmMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_sincronizadoEmMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LocalObra map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalObra(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      nome: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nome'],
+      )!,
+      lote: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}lote'],
+      ),
+      contratante: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}contratante'],
+      ),
+      localizacao: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}localizacao'],
+      ),
+      dataInicio: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}data_inicio'],
+      ),
+      engenheiroResponsavel: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}engenheiro_responsavel'],
+      ),
+      jsonCompleto: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}json_completo'],
+      )!,
+      sincronizadoEm: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}sincronizado_em'],
+      )!,
+    );
+  }
+
+  @override
+  $LocalObrasTable createAlias(String alias) {
+    return $LocalObrasTable(attachedDatabase, alias);
+  }
+}
+
+class LocalObra extends DataClass implements Insertable<LocalObra> {
+  final int id;
+  final String nome;
+  final String? lote;
+  final String? contratante;
+  final String? localizacao;
+  final String? dataInicio;
+  final String? engenheiroResponsavel;
+  final String jsonCompleto;
+  final DateTime sincronizadoEm;
+  const LocalObra({
+    required this.id,
+    required this.nome,
+    this.lote,
+    this.contratante,
+    this.localizacao,
+    this.dataInicio,
+    this.engenheiroResponsavel,
+    required this.jsonCompleto,
+    required this.sincronizadoEm,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['nome'] = Variable<String>(nome);
+    if (!nullToAbsent || lote != null) {
+      map['lote'] = Variable<String>(lote);
+    }
+    if (!nullToAbsent || contratante != null) {
+      map['contratante'] = Variable<String>(contratante);
+    }
+    if (!nullToAbsent || localizacao != null) {
+      map['localizacao'] = Variable<String>(localizacao);
+    }
+    if (!nullToAbsent || dataInicio != null) {
+      map['data_inicio'] = Variable<String>(dataInicio);
+    }
+    if (!nullToAbsent || engenheiroResponsavel != null) {
+      map['engenheiro_responsavel'] = Variable<String>(engenheiroResponsavel);
+    }
+    map['json_completo'] = Variable<String>(jsonCompleto);
+    map['sincronizado_em'] = Variable<DateTime>(sincronizadoEm);
+    return map;
+  }
+
+  LocalObrasCompanion toCompanion(bool nullToAbsent) {
+    return LocalObrasCompanion(
+      id: Value(id),
+      nome: Value(nome),
+      lote: lote == null && nullToAbsent ? const Value.absent() : Value(lote),
+      contratante: contratante == null && nullToAbsent
+          ? const Value.absent()
+          : Value(contratante),
+      localizacao: localizacao == null && nullToAbsent
+          ? const Value.absent()
+          : Value(localizacao),
+      dataInicio: dataInicio == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dataInicio),
+      engenheiroResponsavel: engenheiroResponsavel == null && nullToAbsent
+          ? const Value.absent()
+          : Value(engenheiroResponsavel),
+      jsonCompleto: Value(jsonCompleto),
+      sincronizadoEm: Value(sincronizadoEm),
+    );
+  }
+
+  factory LocalObra.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalObra(
+      id: serializer.fromJson<int>(json['id']),
+      nome: serializer.fromJson<String>(json['nome']),
+      lote: serializer.fromJson<String?>(json['lote']),
+      contratante: serializer.fromJson<String?>(json['contratante']),
+      localizacao: serializer.fromJson<String?>(json['localizacao']),
+      dataInicio: serializer.fromJson<String?>(json['dataInicio']),
+      engenheiroResponsavel: serializer.fromJson<String?>(
+        json['engenheiroResponsavel'],
+      ),
+      jsonCompleto: serializer.fromJson<String>(json['jsonCompleto']),
+      sincronizadoEm: serializer.fromJson<DateTime>(json['sincronizadoEm']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'nome': serializer.toJson<String>(nome),
+      'lote': serializer.toJson<String?>(lote),
+      'contratante': serializer.toJson<String?>(contratante),
+      'localizacao': serializer.toJson<String?>(localizacao),
+      'dataInicio': serializer.toJson<String?>(dataInicio),
+      'engenheiroResponsavel': serializer.toJson<String?>(
+        engenheiroResponsavel,
+      ),
+      'jsonCompleto': serializer.toJson<String>(jsonCompleto),
+      'sincronizadoEm': serializer.toJson<DateTime>(sincronizadoEm),
+    };
+  }
+
+  LocalObra copyWith({
+    int? id,
+    String? nome,
+    Value<String?> lote = const Value.absent(),
+    Value<String?> contratante = const Value.absent(),
+    Value<String?> localizacao = const Value.absent(),
+    Value<String?> dataInicio = const Value.absent(),
+    Value<String?> engenheiroResponsavel = const Value.absent(),
+    String? jsonCompleto,
+    DateTime? sincronizadoEm,
+  }) => LocalObra(
+    id: id ?? this.id,
+    nome: nome ?? this.nome,
+    lote: lote.present ? lote.value : this.lote,
+    contratante: contratante.present ? contratante.value : this.contratante,
+    localizacao: localizacao.present ? localizacao.value : this.localizacao,
+    dataInicio: dataInicio.present ? dataInicio.value : this.dataInicio,
+    engenheiroResponsavel: engenheiroResponsavel.present
+        ? engenheiroResponsavel.value
+        : this.engenheiroResponsavel,
+    jsonCompleto: jsonCompleto ?? this.jsonCompleto,
+    sincronizadoEm: sincronizadoEm ?? this.sincronizadoEm,
+  );
+  LocalObra copyWithCompanion(LocalObrasCompanion data) {
+    return LocalObra(
+      id: data.id.present ? data.id.value : this.id,
+      nome: data.nome.present ? data.nome.value : this.nome,
+      lote: data.lote.present ? data.lote.value : this.lote,
+      contratante: data.contratante.present
+          ? data.contratante.value
+          : this.contratante,
+      localizacao: data.localizacao.present
+          ? data.localizacao.value
+          : this.localizacao,
+      dataInicio: data.dataInicio.present
+          ? data.dataInicio.value
+          : this.dataInicio,
+      engenheiroResponsavel: data.engenheiroResponsavel.present
+          ? data.engenheiroResponsavel.value
+          : this.engenheiroResponsavel,
+      jsonCompleto: data.jsonCompleto.present
+          ? data.jsonCompleto.value
+          : this.jsonCompleto,
+      sincronizadoEm: data.sincronizadoEm.present
+          ? data.sincronizadoEm.value
+          : this.sincronizadoEm,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalObra(')
+          ..write('id: $id, ')
+          ..write('nome: $nome, ')
+          ..write('lote: $lote, ')
+          ..write('contratante: $contratante, ')
+          ..write('localizacao: $localizacao, ')
+          ..write('dataInicio: $dataInicio, ')
+          ..write('engenheiroResponsavel: $engenheiroResponsavel, ')
+          ..write('jsonCompleto: $jsonCompleto, ')
+          ..write('sincronizadoEm: $sincronizadoEm')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    nome,
+    lote,
+    contratante,
+    localizacao,
+    dataInicio,
+    engenheiroResponsavel,
+    jsonCompleto,
+    sincronizadoEm,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocalObra &&
+          other.id == this.id &&
+          other.nome == this.nome &&
+          other.lote == this.lote &&
+          other.contratante == this.contratante &&
+          other.localizacao == this.localizacao &&
+          other.dataInicio == this.dataInicio &&
+          other.engenheiroResponsavel == this.engenheiroResponsavel &&
+          other.jsonCompleto == this.jsonCompleto &&
+          other.sincronizadoEm == this.sincronizadoEm);
+}
+
+class LocalObrasCompanion extends UpdateCompanion<LocalObra> {
+  final Value<int> id;
+  final Value<String> nome;
+  final Value<String?> lote;
+  final Value<String?> contratante;
+  final Value<String?> localizacao;
+  final Value<String?> dataInicio;
+  final Value<String?> engenheiroResponsavel;
+  final Value<String> jsonCompleto;
+  final Value<DateTime> sincronizadoEm;
+  const LocalObrasCompanion({
+    this.id = const Value.absent(),
+    this.nome = const Value.absent(),
+    this.lote = const Value.absent(),
+    this.contratante = const Value.absent(),
+    this.localizacao = const Value.absent(),
+    this.dataInicio = const Value.absent(),
+    this.engenheiroResponsavel = const Value.absent(),
+    this.jsonCompleto = const Value.absent(),
+    this.sincronizadoEm = const Value.absent(),
+  });
+  LocalObrasCompanion.insert({
+    this.id = const Value.absent(),
+    required String nome,
+    this.lote = const Value.absent(),
+    this.contratante = const Value.absent(),
+    this.localizacao = const Value.absent(),
+    this.dataInicio = const Value.absent(),
+    this.engenheiroResponsavel = const Value.absent(),
+    required String jsonCompleto,
+    required DateTime sincronizadoEm,
+  }) : nome = Value(nome),
+       jsonCompleto = Value(jsonCompleto),
+       sincronizadoEm = Value(sincronizadoEm);
+  static Insertable<LocalObra> custom({
+    Expression<int>? id,
+    Expression<String>? nome,
+    Expression<String>? lote,
+    Expression<String>? contratante,
+    Expression<String>? localizacao,
+    Expression<String>? dataInicio,
+    Expression<String>? engenheiroResponsavel,
+    Expression<String>? jsonCompleto,
+    Expression<DateTime>? sincronizadoEm,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (nome != null) 'nome': nome,
+      if (lote != null) 'lote': lote,
+      if (contratante != null) 'contratante': contratante,
+      if (localizacao != null) 'localizacao': localizacao,
+      if (dataInicio != null) 'data_inicio': dataInicio,
+      if (engenheiroResponsavel != null)
+        'engenheiro_responsavel': engenheiroResponsavel,
+      if (jsonCompleto != null) 'json_completo': jsonCompleto,
+      if (sincronizadoEm != null) 'sincronizado_em': sincronizadoEm,
+    });
+  }
+
+  LocalObrasCompanion copyWith({
+    Value<int>? id,
+    Value<String>? nome,
+    Value<String?>? lote,
+    Value<String?>? contratante,
+    Value<String?>? localizacao,
+    Value<String?>? dataInicio,
+    Value<String?>? engenheiroResponsavel,
+    Value<String>? jsonCompleto,
+    Value<DateTime>? sincronizadoEm,
+  }) {
+    return LocalObrasCompanion(
+      id: id ?? this.id,
+      nome: nome ?? this.nome,
+      lote: lote ?? this.lote,
+      contratante: contratante ?? this.contratante,
+      localizacao: localizacao ?? this.localizacao,
+      dataInicio: dataInicio ?? this.dataInicio,
+      engenheiroResponsavel:
+          engenheiroResponsavel ?? this.engenheiroResponsavel,
+      jsonCompleto: jsonCompleto ?? this.jsonCompleto,
+      sincronizadoEm: sincronizadoEm ?? this.sincronizadoEm,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (nome.present) {
+      map['nome'] = Variable<String>(nome.value);
+    }
+    if (lote.present) {
+      map['lote'] = Variable<String>(lote.value);
+    }
+    if (contratante.present) {
+      map['contratante'] = Variable<String>(contratante.value);
+    }
+    if (localizacao.present) {
+      map['localizacao'] = Variable<String>(localizacao.value);
+    }
+    if (dataInicio.present) {
+      map['data_inicio'] = Variable<String>(dataInicio.value);
+    }
+    if (engenheiroResponsavel.present) {
+      map['engenheiro_responsavel'] = Variable<String>(
+        engenheiroResponsavel.value,
+      );
+    }
+    if (jsonCompleto.present) {
+      map['json_completo'] = Variable<String>(jsonCompleto.value);
+    }
+    if (sincronizadoEm.present) {
+      map['sincronizado_em'] = Variable<DateTime>(sincronizadoEm.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalObrasCompanion(')
+          ..write('id: $id, ')
+          ..write('nome: $nome, ')
+          ..write('lote: $lote, ')
+          ..write('contratante: $contratante, ')
+          ..write('localizacao: $localizacao, ')
+          ..write('dataInicio: $dataInicio, ')
+          ..write('engenheiroResponsavel: $engenheiroResponsavel, ')
+          ..write('jsonCompleto: $jsonCompleto, ')
+          ..write('sincronizadoEm: $sincronizadoEm')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $LocalDiariosTable extends LocalDiarios
     with TableInfo<$LocalDiariosTable, LocalDiario> {
   @override
@@ -866,6 +1449,15 @@ class $RascunhosDiariosTable extends RascunhosDiarios
       'PRIMARY KEY AUTOINCREMENT',
     ),
   );
+  static const VerificationMeta _obraIdMeta = const VerificationMeta('obraId');
+  @override
+  late final GeneratedColumn<int> obraId = GeneratedColumn<int>(
+    'obra_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _obraNomeMeta = const VerificationMeta(
     'obraNome',
   );
@@ -873,9 +1465,9 @@ class $RascunhosDiariosTable extends RascunhosDiarios
   late final GeneratedColumn<String> obraNome = GeneratedColumn<String>(
     'obra_nome',
     aliasedName,
-    false,
+    true,
     type: DriftSqlType.string,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _dataDiarioMeta = const VerificationMeta(
     'dataDiario',
@@ -1007,6 +1599,7 @@ class $RascunhosDiariosTable extends RascunhosDiarios
   @override
   List<GeneratedColumn> get $columns => [
     id,
+    obraId,
     obraNome,
     dataDiario,
     equipe,
@@ -1036,13 +1629,17 @@ class $RascunhosDiariosTable extends RascunhosDiarios
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     }
+    if (data.containsKey('obra_id')) {
+      context.handle(
+        _obraIdMeta,
+        obraId.isAcceptableOrUnknown(data['obra_id']!, _obraIdMeta),
+      );
+    }
     if (data.containsKey('obra_nome')) {
       context.handle(
         _obraNomeMeta,
         obraNome.isAcceptableOrUnknown(data['obra_nome']!, _obraNomeMeta),
       );
-    } else if (isInserting) {
-      context.missing(_obraNomeMeta);
     }
     if (data.containsKey('data_diario')) {
       context.handle(
@@ -1150,10 +1747,14 @@ class $RascunhosDiariosTable extends RascunhosDiarios
         DriftSqlType.int,
         data['${effectivePrefix}id'],
       )!,
+      obraId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}obra_id'],
+      ),
       obraNome: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}obra_nome'],
-      )!,
+      ),
       dataDiario: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}data_diario'],
@@ -1213,7 +1814,8 @@ class $RascunhosDiariosTable extends RascunhosDiarios
 
 class RascunhosDiario extends DataClass implements Insertable<RascunhosDiario> {
   final int id;
-  final String obraNome;
+  final int? obraId;
+  final String? obraNome;
   final String? dataDiario;
   final String? equipe;
   final String? clima;
@@ -1228,7 +1830,8 @@ class RascunhosDiario extends DataClass implements Insertable<RascunhosDiario> {
   final DateTime atualizadoEm;
   const RascunhosDiario({
     required this.id,
-    required this.obraNome,
+    this.obraId,
+    this.obraNome,
     this.dataDiario,
     this.equipe,
     this.clima,
@@ -1246,7 +1849,12 @@ class RascunhosDiario extends DataClass implements Insertable<RascunhosDiario> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
-    map['obra_nome'] = Variable<String>(obraNome);
+    if (!nullToAbsent || obraId != null) {
+      map['obra_id'] = Variable<int>(obraId);
+    }
+    if (!nullToAbsent || obraNome != null) {
+      map['obra_nome'] = Variable<String>(obraNome);
+    }
     if (!nullToAbsent || dataDiario != null) {
       map['data_diario'] = Variable<String>(dataDiario);
     }
@@ -1281,7 +1889,12 @@ class RascunhosDiario extends DataClass implements Insertable<RascunhosDiario> {
   RascunhosDiariosCompanion toCompanion(bool nullToAbsent) {
     return RascunhosDiariosCompanion(
       id: Value(id),
-      obraNome: Value(obraNome),
+      obraId: obraId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(obraId),
+      obraNome: obraNome == null && nullToAbsent
+          ? const Value.absent()
+          : Value(obraNome),
       dataDiario: dataDiario == null && nullToAbsent
           ? const Value.absent()
           : Value(dataDiario),
@@ -1320,7 +1933,8 @@ class RascunhosDiario extends DataClass implements Insertable<RascunhosDiario> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return RascunhosDiario(
       id: serializer.fromJson<int>(json['id']),
-      obraNome: serializer.fromJson<String>(json['obraNome']),
+      obraId: serializer.fromJson<int?>(json['obraId']),
+      obraNome: serializer.fromJson<String?>(json['obraNome']),
       dataDiario: serializer.fromJson<String?>(json['dataDiario']),
       equipe: serializer.fromJson<String?>(json['equipe']),
       clima: serializer.fromJson<String?>(json['clima']),
@@ -1340,7 +1954,8 @@ class RascunhosDiario extends DataClass implements Insertable<RascunhosDiario> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
-      'obraNome': serializer.toJson<String>(obraNome),
+      'obraId': serializer.toJson<int?>(obraId),
+      'obraNome': serializer.toJson<String?>(obraNome),
       'dataDiario': serializer.toJson<String?>(dataDiario),
       'equipe': serializer.toJson<String?>(equipe),
       'clima': serializer.toJson<String?>(clima),
@@ -1358,7 +1973,8 @@ class RascunhosDiario extends DataClass implements Insertable<RascunhosDiario> {
 
   RascunhosDiario copyWith({
     int? id,
-    String? obraNome,
+    Value<int?> obraId = const Value.absent(),
+    Value<String?> obraNome = const Value.absent(),
     Value<String?> dataDiario = const Value.absent(),
     Value<String?> equipe = const Value.absent(),
     Value<String?> clima = const Value.absent(),
@@ -1373,7 +1989,8 @@ class RascunhosDiario extends DataClass implements Insertable<RascunhosDiario> {
     DateTime? atualizadoEm,
   }) => RascunhosDiario(
     id: id ?? this.id,
-    obraNome: obraNome ?? this.obraNome,
+    obraId: obraId.present ? obraId.value : this.obraId,
+    obraNome: obraNome.present ? obraNome.value : this.obraNome,
     dataDiario: dataDiario.present ? dataDiario.value : this.dataDiario,
     equipe: equipe.present ? equipe.value : this.equipe,
     clima: clima.present ? clima.value : this.clima,
@@ -1390,6 +2007,7 @@ class RascunhosDiario extends DataClass implements Insertable<RascunhosDiario> {
   RascunhosDiario copyWithCompanion(RascunhosDiariosCompanion data) {
     return RascunhosDiario(
       id: data.id.present ? data.id.value : this.id,
+      obraId: data.obraId.present ? data.obraId.value : this.obraId,
       obraNome: data.obraNome.present ? data.obraNome.value : this.obraNome,
       dataDiario: data.dataDiario.present
           ? data.dataDiario.value
@@ -1422,6 +2040,7 @@ class RascunhosDiario extends DataClass implements Insertable<RascunhosDiario> {
   String toString() {
     return (StringBuffer('RascunhosDiario(')
           ..write('id: $id, ')
+          ..write('obraId: $obraId, ')
           ..write('obraNome: $obraNome, ')
           ..write('dataDiario: $dataDiario, ')
           ..write('equipe: $equipe, ')
@@ -1442,6 +2061,7 @@ class RascunhosDiario extends DataClass implements Insertable<RascunhosDiario> {
   @override
   int get hashCode => Object.hash(
     id,
+    obraId,
     obraNome,
     dataDiario,
     equipe,
@@ -1461,6 +2081,7 @@ class RascunhosDiario extends DataClass implements Insertable<RascunhosDiario> {
       identical(this, other) ||
       (other is RascunhosDiario &&
           other.id == this.id &&
+          other.obraId == this.obraId &&
           other.obraNome == this.obraNome &&
           other.dataDiario == this.dataDiario &&
           other.equipe == this.equipe &&
@@ -1478,7 +2099,8 @@ class RascunhosDiario extends DataClass implements Insertable<RascunhosDiario> {
 
 class RascunhosDiariosCompanion extends UpdateCompanion<RascunhosDiario> {
   final Value<int> id;
-  final Value<String> obraNome;
+  final Value<int?> obraId;
+  final Value<String?> obraNome;
   final Value<String?> dataDiario;
   final Value<String?> equipe;
   final Value<String?> clima;
@@ -1493,6 +2115,7 @@ class RascunhosDiariosCompanion extends UpdateCompanion<RascunhosDiario> {
   final Value<DateTime> atualizadoEm;
   const RascunhosDiariosCompanion({
     this.id = const Value.absent(),
+    this.obraId = const Value.absent(),
     this.obraNome = const Value.absent(),
     this.dataDiario = const Value.absent(),
     this.equipe = const Value.absent(),
@@ -1509,7 +2132,8 @@ class RascunhosDiariosCompanion extends UpdateCompanion<RascunhosDiario> {
   });
   RascunhosDiariosCompanion.insert({
     this.id = const Value.absent(),
-    required String obraNome,
+    this.obraId = const Value.absent(),
+    this.obraNome = const Value.absent(),
     this.dataDiario = const Value.absent(),
     this.equipe = const Value.absent(),
     this.clima = const Value.absent(),
@@ -1522,12 +2146,12 @@ class RascunhosDiariosCompanion extends UpdateCompanion<RascunhosDiario> {
     required String jsonCompleto,
     required DateTime criadoEm,
     required DateTime atualizadoEm,
-  }) : obraNome = Value(obraNome),
-       jsonCompleto = Value(jsonCompleto),
+  }) : jsonCompleto = Value(jsonCompleto),
        criadoEm = Value(criadoEm),
        atualizadoEm = Value(atualizadoEm);
   static Insertable<RascunhosDiario> custom({
     Expression<int>? id,
+    Expression<int>? obraId,
     Expression<String>? obraNome,
     Expression<String>? dataDiario,
     Expression<String>? equipe,
@@ -1544,6 +2168,7 @@ class RascunhosDiariosCompanion extends UpdateCompanion<RascunhosDiario> {
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (obraId != null) 'obra_id': obraId,
       if (obraNome != null) 'obra_nome': obraNome,
       if (dataDiario != null) 'data_diario': dataDiario,
       if (equipe != null) 'equipe': equipe,
@@ -1562,7 +2187,8 @@ class RascunhosDiariosCompanion extends UpdateCompanion<RascunhosDiario> {
 
   RascunhosDiariosCompanion copyWith({
     Value<int>? id,
-    Value<String>? obraNome,
+    Value<int?>? obraId,
+    Value<String?>? obraNome,
     Value<String?>? dataDiario,
     Value<String?>? equipe,
     Value<String?>? clima,
@@ -1578,6 +2204,7 @@ class RascunhosDiariosCompanion extends UpdateCompanion<RascunhosDiario> {
   }) {
     return RascunhosDiariosCompanion(
       id: id ?? this.id,
+      obraId: obraId ?? this.obraId,
       obraNome: obraNome ?? this.obraNome,
       dataDiario: dataDiario ?? this.dataDiario,
       equipe: equipe ?? this.equipe,
@@ -1599,6 +2226,9 @@ class RascunhosDiariosCompanion extends UpdateCompanion<RascunhosDiario> {
     final map = <String, Expression>{};
     if (id.present) {
       map['id'] = Variable<int>(id.value);
+    }
+    if (obraId.present) {
+      map['obra_id'] = Variable<int>(obraId.value);
     }
     if (obraNome.present) {
       map['obra_nome'] = Variable<String>(obraNome.value);
@@ -1646,6 +2276,7 @@ class RascunhosDiariosCompanion extends UpdateCompanion<RascunhosDiario> {
   String toString() {
     return (StringBuffer('RascunhosDiariosCompanion(')
           ..write('id: $id, ')
+          ..write('obraId: $obraId, ')
           ..write('obraNome: $obraNome, ')
           ..write('dataDiario: $dataDiario, ')
           ..write('equipe: $equipe, ')
@@ -1667,6 +2298,7 @@ class RascunhosDiariosCompanion extends UpdateCompanion<RascunhosDiario> {
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
+  late final $LocalObrasTable localObras = $LocalObrasTable(this);
   late final $LocalDiariosTable localDiarios = $LocalDiariosTable(this);
   late final $SyncMetadadosTable syncMetadados = $SyncMetadadosTable(this);
   late final $RascunhosDiariosTable rascunhosDiarios = $RascunhosDiariosTable(
@@ -1677,12 +2309,292 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
+    localObras,
     localDiarios,
     syncMetadados,
     rascunhosDiarios,
   ];
 }
 
+typedef $$LocalObrasTableCreateCompanionBuilder =
+    LocalObrasCompanion Function({
+      Value<int> id,
+      required String nome,
+      Value<String?> lote,
+      Value<String?> contratante,
+      Value<String?> localizacao,
+      Value<String?> dataInicio,
+      Value<String?> engenheiroResponsavel,
+      required String jsonCompleto,
+      required DateTime sincronizadoEm,
+    });
+typedef $$LocalObrasTableUpdateCompanionBuilder =
+    LocalObrasCompanion Function({
+      Value<int> id,
+      Value<String> nome,
+      Value<String?> lote,
+      Value<String?> contratante,
+      Value<String?> localizacao,
+      Value<String?> dataInicio,
+      Value<String?> engenheiroResponsavel,
+      Value<String> jsonCompleto,
+      Value<DateTime> sincronizadoEm,
+    });
+
+class $$LocalObrasTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalObrasTable> {
+  $$LocalObrasTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nome => $composableBuilder(
+    column: $table.nome,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lote => $composableBuilder(
+    column: $table.lote,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contratante => $composableBuilder(
+    column: $table.contratante,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get localizacao => $composableBuilder(
+    column: $table.localizacao,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get dataInicio => $composableBuilder(
+    column: $table.dataInicio,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get engenheiroResponsavel => $composableBuilder(
+    column: $table.engenheiroResponsavel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get jsonCompleto => $composableBuilder(
+    column: $table.jsonCompleto,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get sincronizadoEm => $composableBuilder(
+    column: $table.sincronizadoEm,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LocalObrasTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalObrasTable> {
+  $$LocalObrasTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nome => $composableBuilder(
+    column: $table.nome,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lote => $composableBuilder(
+    column: $table.lote,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get contratante => $composableBuilder(
+    column: $table.contratante,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get localizacao => $composableBuilder(
+    column: $table.localizacao,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get dataInicio => $composableBuilder(
+    column: $table.dataInicio,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get engenheiroResponsavel => $composableBuilder(
+    column: $table.engenheiroResponsavel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get jsonCompleto => $composableBuilder(
+    column: $table.jsonCompleto,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get sincronizadoEm => $composableBuilder(
+    column: $table.sincronizadoEm,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LocalObrasTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalObrasTable> {
+  $$LocalObrasTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get nome =>
+      $composableBuilder(column: $table.nome, builder: (column) => column);
+
+  GeneratedColumn<String> get lote =>
+      $composableBuilder(column: $table.lote, builder: (column) => column);
+
+  GeneratedColumn<String> get contratante => $composableBuilder(
+    column: $table.contratante,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get localizacao => $composableBuilder(
+    column: $table.localizacao,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get dataInicio => $composableBuilder(
+    column: $table.dataInicio,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get engenheiroResponsavel => $composableBuilder(
+    column: $table.engenheiroResponsavel,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get jsonCompleto => $composableBuilder(
+    column: $table.jsonCompleto,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get sincronizadoEm => $composableBuilder(
+    column: $table.sincronizadoEm,
+    builder: (column) => column,
+  );
+}
+
+class $$LocalObrasTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LocalObrasTable,
+          LocalObra,
+          $$LocalObrasTableFilterComposer,
+          $$LocalObrasTableOrderingComposer,
+          $$LocalObrasTableAnnotationComposer,
+          $$LocalObrasTableCreateCompanionBuilder,
+          $$LocalObrasTableUpdateCompanionBuilder,
+          (
+            LocalObra,
+            BaseReferences<_$AppDatabase, $LocalObrasTable, LocalObra>,
+          ),
+          LocalObra,
+          PrefetchHooks Function()
+        > {
+  $$LocalObrasTableTableManager(_$AppDatabase db, $LocalObrasTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LocalObrasTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LocalObrasTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LocalObrasTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> nome = const Value.absent(),
+                Value<String?> lote = const Value.absent(),
+                Value<String?> contratante = const Value.absent(),
+                Value<String?> localizacao = const Value.absent(),
+                Value<String?> dataInicio = const Value.absent(),
+                Value<String?> engenheiroResponsavel = const Value.absent(),
+                Value<String> jsonCompleto = const Value.absent(),
+                Value<DateTime> sincronizadoEm = const Value.absent(),
+              }) => LocalObrasCompanion(
+                id: id,
+                nome: nome,
+                lote: lote,
+                contratante: contratante,
+                localizacao: localizacao,
+                dataInicio: dataInicio,
+                engenheiroResponsavel: engenheiroResponsavel,
+                jsonCompleto: jsonCompleto,
+                sincronizadoEm: sincronizadoEm,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String nome,
+                Value<String?> lote = const Value.absent(),
+                Value<String?> contratante = const Value.absent(),
+                Value<String?> localizacao = const Value.absent(),
+                Value<String?> dataInicio = const Value.absent(),
+                Value<String?> engenheiroResponsavel = const Value.absent(),
+                required String jsonCompleto,
+                required DateTime sincronizadoEm,
+              }) => LocalObrasCompanion.insert(
+                id: id,
+                nome: nome,
+                lote: lote,
+                contratante: contratante,
+                localizacao: localizacao,
+                dataInicio: dataInicio,
+                engenheiroResponsavel: engenheiroResponsavel,
+                jsonCompleto: jsonCompleto,
+                sincronizadoEm: sincronizadoEm,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LocalObrasTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LocalObrasTable,
+      LocalObra,
+      $$LocalObrasTableFilterComposer,
+      $$LocalObrasTableOrderingComposer,
+      $$LocalObrasTableAnnotationComposer,
+      $$LocalObrasTableCreateCompanionBuilder,
+      $$LocalObrasTableUpdateCompanionBuilder,
+      (LocalObra, BaseReferences<_$AppDatabase, $LocalObrasTable, LocalObra>),
+      LocalObra,
+      PrefetchHooks Function()
+    >;
 typedef $$LocalDiariosTableCreateCompanionBuilder =
     LocalDiariosCompanion Function({
       Value<int> id,
@@ -2130,7 +3042,8 @@ typedef $$SyncMetadadosTableProcessedTableManager =
 typedef $$RascunhosDiariosTableCreateCompanionBuilder =
     RascunhosDiariosCompanion Function({
       Value<int> id,
-      required String obraNome,
+      Value<int?> obraId,
+      Value<String?> obraNome,
       Value<String?> dataDiario,
       Value<String?> equipe,
       Value<String?> clima,
@@ -2147,7 +3060,8 @@ typedef $$RascunhosDiariosTableCreateCompanionBuilder =
 typedef $$RascunhosDiariosTableUpdateCompanionBuilder =
     RascunhosDiariosCompanion Function({
       Value<int> id,
-      Value<String> obraNome,
+      Value<int?> obraId,
+      Value<String?> obraNome,
       Value<String?> dataDiario,
       Value<String?> equipe,
       Value<String?> clima,
@@ -2173,6 +3087,11 @@ class $$RascunhosDiariosTableFilterComposer
   });
   ColumnFilters<int> get id => $composableBuilder(
     column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get obraId => $composableBuilder(
+    column: $table.obraId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2256,6 +3175,11 @@ class $$RascunhosDiariosTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get obraId => $composableBuilder(
+    column: $table.obraId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get obraNome => $composableBuilder(
     column: $table.obraNome,
     builder: (column) => ColumnOrderings(column),
@@ -2333,6 +3257,9 @@ class $$RascunhosDiariosTableAnnotationComposer
   });
   GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get obraId =>
+      $composableBuilder(column: $table.obraId, builder: (column) => column);
 
   GeneratedColumn<String> get obraNome =>
       $composableBuilder(column: $table.obraNome, builder: (column) => column);
@@ -2424,7 +3351,8 @@ class $$RascunhosDiariosTableTableManager
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
-                Value<String> obraNome = const Value.absent(),
+                Value<int?> obraId = const Value.absent(),
+                Value<String?> obraNome = const Value.absent(),
                 Value<String?> dataDiario = const Value.absent(),
                 Value<String?> equipe = const Value.absent(),
                 Value<String?> clima = const Value.absent(),
@@ -2439,6 +3367,7 @@ class $$RascunhosDiariosTableTableManager
                 Value<DateTime> atualizadoEm = const Value.absent(),
               }) => RascunhosDiariosCompanion(
                 id: id,
+                obraId: obraId,
                 obraNome: obraNome,
                 dataDiario: dataDiario,
                 equipe: equipe,
@@ -2456,7 +3385,8 @@ class $$RascunhosDiariosTableTableManager
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
-                required String obraNome,
+                Value<int?> obraId = const Value.absent(),
+                Value<String?> obraNome = const Value.absent(),
                 Value<String?> dataDiario = const Value.absent(),
                 Value<String?> equipe = const Value.absent(),
                 Value<String?> clima = const Value.absent(),
@@ -2471,6 +3401,7 @@ class $$RascunhosDiariosTableTableManager
                 required DateTime atualizadoEm,
               }) => RascunhosDiariosCompanion.insert(
                 id: id,
+                obraId: obraId,
                 obraNome: obraNome,
                 dataDiario: dataDiario,
                 equipe: equipe,
@@ -2514,6 +3445,8 @@ typedef $$RascunhosDiariosTableProcessedTableManager =
 class $AppDatabaseManager {
   final _$AppDatabase _db;
   $AppDatabaseManager(this._db);
+  $$LocalObrasTableTableManager get localObras =>
+      $$LocalObrasTableTableManager(_db, _db.localObras);
   $$LocalDiariosTableTableManager get localDiarios =>
       $$LocalDiariosTableTableManager(_db, _db.localDiarios);
   $$SyncMetadadosTableTableManager get syncMetadados =>
