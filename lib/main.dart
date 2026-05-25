@@ -1,14 +1,102 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'core/api/api_client.dart';
 import 'core/database/app_database.dart';
 import 'features/auth/auth_service.dart';
+
+String formatarQuantidadeMaterialVisivel(dynamic valor) {
+  final texto = valor?.toString().trim() ?? '';
+
+  if (texto.isEmpty || texto == '-') {
+    return '-';
+  }
+
+  final partes = texto.split(',');
+  final inteiroBruto = partes.first.replaceAll(RegExp(r'[^0-9]'), '');
+
+  if (inteiroBruto.isEmpty) {
+    return texto;
+  }
+
+  final buffer = StringBuffer();
+  var contador = 0;
+
+  for (var i = inteiroBruto.length - 1; i >= 0; i--) {
+    buffer.write(inteiroBruto[i]);
+    contador++;
+
+    if (contador == 3 && i != 0) {
+      buffer.write('.');
+      contador = 0;
+    }
+  }
+
+  final inteiroFormatado = buffer.toString().split('').reversed.join();
+
+  if (partes.length > 1) {
+    final decimal = partes
+        .sublist(1)
+        .join('')
+        .replaceAll(RegExp(r'[^0-9]'), '');
+
+    if (decimal.isNotEmpty) {
+      return '$inteiroFormatado,$decimal';
+    }
+  }
+
+  return inteiroFormatado;
+}
+
+class QuantidadeMaterialInputFormatter extends TextInputFormatter {
+  const QuantidadeMaterialInputFormatter();
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final textoNovo = newValue.text;
+
+    if (textoNovo.trim().isEmpty) {
+      return newValue;
+    }
+
+    final temVirgula = textoNovo.contains(',');
+    final partes = textoNovo.split(',');
+    final inteiroBruto = partes.first.replaceAll(RegExp(r'[^0-9]'), '');
+
+    if (inteiroBruto.isEmpty) {
+      return const TextEditingValue(
+        text: '',
+        selection: TextSelection.collapsed(offset: 0),
+      );
+    }
+
+    final inteiroFormatado = formatarQuantidadeMaterialVisivel(inteiroBruto);
+    var textoFormatado = inteiroFormatado;
+
+    if (temVirgula) {
+      final decimal = partes.length > 1
+          ? partes.sublist(1).join('').replaceAll(RegExp(r'[^0-9]'), '')
+          : '';
+
+      textoFormatado = '$inteiroFormatado,$decimal';
+    }
+
+    return TextEditingValue(
+      text: textoFormatado,
+      selection: TextSelection.collapsed(offset: textoFormatado.length),
+    );
+  }
+}
 
 class AppUI {
   AppUI._();
@@ -547,7 +635,9 @@ class _HomePageState extends State<HomePage> {
         return true;
       }
 
-      final status = normalizarStatus(diario['status_aprovacao']);
+      final status = normalizarStatus(
+        diario['status_visual'] ?? diario['status_aprovacao'],
+      );
       return status == filtroStatus;
     }).toList();
 
@@ -604,7 +694,9 @@ class _HomePageState extends State<HomePage> {
     };
 
     for (final diario in base) {
-      final status = normalizarStatus(diario['status_aprovacao']);
+      final status = normalizarStatus(
+        diario['status_visual'] ?? diario['status_aprovacao'],
+      );
 
       if (resumo.containsKey(status)) {
         resumo[status] = resumo[status]! + 1;
@@ -840,27 +932,35 @@ class _HomePageState extends State<HomePage> {
     });
 
     int enviados = 0;
+    String? erroEnvio;
 
-    for (final item in pendentes) {
-      try {
-        await authService.enviarRascunhoDiario(item);
-        enviados++;
-      } catch (_) {
-        // Se estiver sem internet/VPN/API, mantém pendente e continua o fluxo normal.
-        break;
+    try {
+      for (final item in pendentes) {
+        try {
+          await authService
+              .enviarRascunhoDiario(item)
+              .timeout(const Duration(minutes: 8));
+
+          enviados++;
+        } catch (erro) {
+          erroEnvio = mensagemErroEnvioPendente(erro);
+          break;
+        }
+      }
+    } finally {
+      final restantes = await authService.contarRascunhosDiarios();
+
+      if (mounted) {
+        setState(() {
+          totalPendentesLocais = restantes;
+          enviandoPendentesAuto = false;
+        });
       }
     }
-
-    final restantes = await authService.contarRascunhosDiarios();
 
     if (!mounted) {
       return enviados;
     }
-
-    setState(() {
-      totalPendentesLocais = restantes;
-      enviandoPendentesAuto = false;
-    });
 
     if (mostrarMensagem && enviados > 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -868,7 +968,61 @@ class _HomePageState extends State<HomePage> {
       );
     }
 
+    if (erroEnvio != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(erroEnvio),
+          backgroundColor: AppUI.red,
+          duration: const Duration(seconds: 7),
+        ),
+      );
+    }
+
     return enviados;
+  }
+
+  String mensagemErroEnvioPendente(Object erro) {
+    if (erro is DioException) {
+      final data = erro.response?.data;
+
+      if (data is Map && data['erro'] != null) {
+        return data['erro'].toString();
+      }
+
+      final status = erro.response?.statusCode;
+
+      if (status == 413) {
+        return 'As fotos estão muito pesadas para envio. Tente enviar em menor quantidade.';
+      }
+
+      if (status == 403) {
+        return 'Usuário sem permissão para enviar este diário/obra.';
+      }
+
+      if (status == 401) {
+        return 'Sessão expirada. Faça login novamente.';
+      }
+
+      if (erro.type == DioExceptionType.connectionTimeout ||
+          erro.type == DioExceptionType.sendTimeout ||
+          erro.type == DioExceptionType.receiveTimeout) {
+        return 'O envio demorou demais. Verifique a conexão/VPN e tente novamente.';
+      }
+
+      return AppErrorHandler.mensagemModoOffline(erro);
+    }
+
+    if (erro is TimeoutException) {
+      return 'O envio demorou demais e foi interrompido. Tente novamente com internet estável.';
+    }
+
+    final texto = erro.toString().trim();
+
+    if (texto.isNotEmpty) {
+      return texto.replaceFirst('Exception: ', '');
+    }
+
+    return 'Não foi possível enviar o diário pendente.';
   }
 
   Future<void> carregarDiarios({bool tentarEnviarPendentes = false}) async {
@@ -1097,6 +1251,7 @@ class _HomePageState extends State<HomePage> {
   String normalizarStatus(dynamic valor) {
     final status = valor?.toString().trim().toUpperCase() ?? '';
 
+    if (status.contains('ATUALIZ')) return 'ATUALIZADO';
     if (status.contains('APROV')) return 'APROVADO';
     if (status.contains('DEVOL')) return 'DEVOLVIDO';
     if (status.contains('PEND')) return 'PENDENTE';
@@ -1123,6 +1278,8 @@ class _HomePageState extends State<HomePage> {
     switch (status) {
       case 'TODOS':
         return Icons.list_alt;
+      case 'ATUALIZADO':
+        return Icons.update;
       case 'PENDENTE':
         return Icons.hourglass_empty;
       case 'APROVADO':
@@ -1557,7 +1714,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget diarioCard(Map<String, dynamic> item) {
-    final status = normalizarStatus(item['status_aprovacao']);
+    final status = normalizarStatus(
+      item['status_visual'] ?? item['status_aprovacao'],
+    );
     final statusColor = corStatusCard(status);
     final servico = texto(primeiroServico(item));
 
@@ -2355,10 +2514,52 @@ class _CentralPendenciasPageState extends State<CentralPendenciasPage> {
 
   String motivoPendencia(String chave, Map<String, dynamic> diario) {
     if (chave == 'diarios_devolvidos') {
-      return texto(
+      final candidatosMotivo = [
         diario['observacao_aprovacao'],
-        padrao: 'Diário devolvido para correção.',
+        diario['motivo_devolucao'],
+        diario['observacao_devolucao'],
+        diario['motivo'],
+        diario['descricao'],
+      ];
+
+      var motivo = '';
+
+      for (final item in candidatosMotivo) {
+        final valor = item?.toString().trim() ?? '';
+
+        if (valor.isEmpty) {
+          continue;
+        }
+
+        if (valor.toLowerCase() == 'diário devolvido para correção.' ||
+            valor.toLowerCase() == 'registro devolvido para correção.') {
+          if (motivo.isEmpty) {
+            motivo = valor;
+          }
+          continue;
+        }
+
+        motivo = valor;
+        break;
+      }
+
+      if (motivo.isEmpty) {
+        motivo = 'Diário devolvido para correção.';
+      }
+
+      final devolvidoPor = texto(
+        diario['devolvido_por'] ??
+            diario['aprovado_por'] ??
+            diario['engenheiro_nome'] ??
+            diario['responsavel_aprovacao'],
+        padrao: '',
       );
+
+      if (devolvidoPor.isNotEmpty) {
+        return 'Devolvido por: $devolvidoPor\nMotivo: $motivo';
+      }
+
+      return 'Motivo: $motivo';
     }
 
     if (chave == 'edicoes_pendentes') {
@@ -2885,6 +3086,231 @@ class _CentralPendenciasPageState extends State<CentralPendenciasPage> {
     );
   }
 
+  Future<Set<String>> idsDevolvidosComCorrecaoLocal() async {
+    final ids = <String>{};
+
+    try {
+      final rascunhos = await authService.listarRascunhosDiarios();
+
+      for (final rascunho in rascunhos) {
+        try {
+          final dados = Map<String, dynamic>.from(
+            jsonDecode(rascunho.jsonCompleto) as Map,
+          );
+
+          final candidatos = [
+            dados['diario_original_devolvido_id'],
+            dados['diario_corrigido_de_id'],
+            dados['diario_devolvido_id'],
+            dados['id_devolvido'],
+          ];
+
+          for (final valor in candidatos) {
+            final id = valor?.toString().trim() ?? '';
+
+            if (id.isNotEmpty && id != 'null') {
+              ids.add(id);
+            }
+          }
+        } catch (_) {
+          // Ignora rascunho antigo/inválido.
+        }
+      }
+    } catch (_) {
+      // Se não conseguir ler rascunhos locais, não bloqueia a Central.
+    }
+
+    return ids;
+  }
+
+  void ocultarDevolvidosComCorrecaoLocal(Set<String> ids) {
+    if (ids.isEmpty) {
+      return;
+    }
+
+    final listaDevolvidos = pendencias['diarios_devolvidos'];
+
+    if (listaDevolvidos is! List) {
+      return;
+    }
+
+    listaDevolvidos.removeWhere((item) {
+      if (item is! Map) {
+        return false;
+      }
+
+      final id = item['id']?.toString().trim() ?? '';
+
+      return id.isNotEmpty && ids.contains(id);
+    });
+  }
+
+  Future<void> corrigirDiarioDevolvido(Map<String, dynamic> diario) async {
+    final diarioId = int.tryParse(diario['id']?.toString() ?? '');
+
+    if (diarioId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível identificar o diário.')),
+      );
+      return;
+    }
+
+    final motivoDevolucao = motivoPendencia('diarios_devolvidos', diario);
+
+    final confirmarCorrecao = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Diário devolvido'),
+          content: Text(motivoDevolucao, style: const TextStyle(height: 1.35)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Voltar'),
+            ),
+            FilledButton.icon(
+              onPressed: () => Navigator.of(context).pop(true),
+              icon: const Icon(Icons.edit_note_outlined),
+              label: const Text('Editar e reenviar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmarCorrecao != true) {
+      return;
+    }
+
+    final dados = Map<String, dynamic>.from(diario);
+    final obra = diario['obra'];
+
+    dados['diario_devolvido_id'] = diarioId;
+    dados['id_devolvido'] = diarioId;
+    dados['modo_correcao_devolvido'] = true;
+    dados['status_aprovacao'] = 'DEVOLVIDO';
+
+    // Correção de devolvido: o envio vai atualizar o próprio diário existente.
+    dados.remove('diario_id_servidor');
+
+    // Não copia URLs de fotos já enviadas para o rascunho local.
+    // As fotos antigas continuam vinculadas ao diário no sistema.
+    dados.remove('fotos');
+    dados.remove('fotos_offline');
+
+    if (obra is Map) {
+      dados['obra_id'] ??= obra['id'];
+      dados['obra_nome'] ??= obra['nome'];
+      dados['nome_obra'] ??= obra['nome'];
+    }
+
+    dados['observacao_devolucao'] = motivoPendencia(
+      'diarios_devolvidos',
+      diario,
+    );
+
+    try {
+      final rascunhoId = await authService.salvarRascunhoDiario(dados);
+      final rascunhos = await authService.listarRascunhosDiarios();
+
+      RascunhosDiario? rascunho;
+
+      for (final item in rascunhos) {
+        if (item.id == rascunhoId) {
+          rascunho = item;
+          break;
+        }
+      }
+
+      if (!mounted) {
+        return;
+      }
+
+      if (rascunho == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Rascunho criado, mas não foi possível abri-lo.'),
+          ),
+        );
+        return;
+      }
+
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => NovoDiarioOfflinePage(
+            obraNome: nomeObra(diario),
+            rascunhoExistente: rascunho,
+          ),
+        ),
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        final listaDevolvidos = pendencias['diarios_devolvidos'];
+
+        if (listaDevolvidos is List) {
+          listaDevolvidos.removeWhere((item) {
+            if (item is! Map) {
+              return false;
+            }
+
+            return item['id']?.toString() == diarioId.toString();
+          });
+        }
+      });
+
+      await authService.sync(limite: 300);
+      await carregarPendencias();
+
+      final idsCorrigidosLocalmente = await idsDevolvidosComCorrecaoLocal();
+
+      if (mounted) {
+        setState(() {
+          ocultarDevolvidosComCorrecaoLocal(idsCorrigidosLocalmente);
+        });
+      }
+    } catch (erro) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(erro.toString().replaceFirst('Exception: ', '')),
+        ),
+      );
+    }
+  }
+
+  Widget botaoCorrigirDiarioDevolvido(Map<String, dynamic> diario) {
+    if (filtro != 'diarios_devolvidos') {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: SizedBox(
+        width: double.infinity,
+        child: FilledButton.icon(
+          onPressed: () => corrigirDiarioDevolvido(diario),
+          icon: const Icon(Icons.edit_note_outlined),
+          label: const Text('Corrigir e reenviar'),
+          style: FilledButton.styleFrom(
+            backgroundColor: AppUI.orange,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget cardPendencia(Map<String, dynamic> diario) {
     final color = corStatus(filtro);
 
@@ -2975,6 +3401,7 @@ class _CentralPendenciasPageState extends State<CentralPendenciasPage> {
                     ),
                     botoesAcaoEdicao(diario),
                     botoesAcaoExclusao(diario),
+                    botaoCorrigirDiarioDevolvido(diario),
                   ],
                 ),
               ),
@@ -3201,6 +3628,7 @@ class DiarioDetalhePage extends StatelessWidget {
   String normalizarStatus(dynamic valor) {
     final status = valor?.toString().trim().toUpperCase() ?? '';
 
+    if (status.contains('ATUALIZ')) return 'ATUALIZADO';
     if (status.contains('APROV')) return 'APROVADO';
     if (status.contains('DEVOL')) return 'DEVOLVIDO';
     if (status.contains('PEND')) return 'PENDENTE';
@@ -3227,6 +3655,8 @@ class DiarioDetalhePage extends StatelessWidget {
         return Icons.check_circle_outline;
       case 'DEVOLVIDO':
         return Icons.assignment_return_outlined;
+      case 'ATUALIZADO':
+        return Icons.update;
       case 'PENDENTE':
         return Icons.hourglass_empty;
       default:
@@ -3486,9 +3916,41 @@ class DiarioDetalhePage extends StatelessWidget {
   }) {
     final linhasValidas = linhas.where((linha) {
       final textoLinha = linha.trim();
-      return textoLinha.isNotEmpty &&
-          !textoLinha.endsWith(': -') &&
-          !textoLinha.endsWith(':');
+
+      if (textoLinha.isEmpty) return false;
+      if (textoLinha.endsWith(':')) return false;
+      if (textoLinha.endsWith(': -')) return false;
+
+      final partes = textoLinha.split(':');
+
+      if (partes.length >= 2) {
+        final valor = partes.sublist(1).join(':').trim().toLowerCase();
+
+        if (valor.isEmpty) return false;
+        if (valor == '-') return false;
+        if (valor == 'null') return false;
+        if (valor == 'não informado') return false;
+
+        // Remove casos como:
+        // Largura: - m
+        // Área escavada: - m²
+        // Pedra nº3: - m³
+        // Temperatura CBUQ: - °C
+        if (valor.startsWith('- ')) return false;
+        if (valor.startsWith('null ')) return false;
+
+        // Remove unidade solta sem valor útil.
+        if (valor == 'm' ||
+            valor == 'm²' ||
+            valor == 'm³' ||
+            valor == '°c' ||
+            valor == 'ton' ||
+            valor == 'un') {
+          return false;
+        }
+      }
+
+      return true;
     }).toList();
 
     return Container(
@@ -3736,9 +4198,13 @@ class DiarioDetalhePage extends StatelessWidget {
                 final texto = motivoController.text.trim();
 
                 if (texto.isEmpty) {
-                  Navigator.of(
-                    context,
-                  ).pop('Registro devolvido para correção.');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Informe o motivo da devolução para o apontador corrigir.',
+                      ),
+                    ),
+                  );
                   return;
                 }
 
@@ -4196,7 +4662,9 @@ class DiarioDetalhePage extends StatelessWidget {
       'material_sinalizacao',
     ]);
 
-    final status = normalizarStatus(diario['status_aprovacao']);
+    final status = normalizarStatus(
+      diario['status_visual'] ?? diario['status_aprovacao'],
+    );
     final statusColor = corStatus(status);
     final observacoes = texto(
       diario['comentarios_ocorrencias'] ??
@@ -4495,7 +4963,7 @@ class DiarioDetalhePage extends StatelessWidget {
                       titulo: texto(mat['material'], padrao: 'Material'),
                       color: const Color(0xFFEA580C),
                       linhas: [
-                        'Quantidade: ${texto(mat['quantidade'])} ${texto(mat['unidade'], padrao: '')}',
+                        'Quantidade: ${formatarQuantidadeMaterialVisivel(mat['quantidade'])} ${texto(mat['unidade'], padrao: '')}',
                         'Temperatura CBUQ: ${texto(mat['temperatura_cbuq'])} °C',
                         'Placa: ${texto(mat['placa'])}',
                         'Ticket: ${texto(mat['ticket'])}',
@@ -4698,7 +5166,7 @@ class GaleriaFotosPage extends StatefulWidget {
 }
 
 class _GaleriaFotosPageState extends State<GaleriaFotosPage> {
-  static const int fotosPorPagina = 40;
+  static const int fotosPorPagina = 24;
 
   final ScrollController scrollController = ScrollController();
 
@@ -5062,6 +5530,7 @@ class _GaleriaFotosPageState extends State<GaleriaFotosPage> {
             width: double.infinity,
             fit: BoxFit.cover,
             borderRadius: BorderRadius.circular(18),
+            cacheWidth: 720,
           ),
           Positioned(left: 10, top: 10, child: badgeStatusOffline(url)),
           Positioned(
@@ -5437,6 +5906,7 @@ class _FotoTelaCheiaPageState extends State<FotoTelaCheiaPage> {
           backgroundColor: Colors.black,
           loadingColor: Colors.white,
           errorDarkMode: true,
+          cacheWidth: 1600,
         ),
       ),
     );
@@ -6255,7 +6725,7 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
       'km_final': servicos.isNotEmpty ? servicos.first['km_final'] : null,
 
       'descricao': observacoesController.text.trim().isEmpty
-          ? 'Diário DNIT preenchido pelo app offline'
+          ? 'Não houve comentários ou ocorrências.'
           : observacoesController.text.trim(),
       'ocorrencias': ocorrenciasController.text.trim(),
       'comentarios_ocorrencias': observacoesController.text.trim(),
@@ -6792,7 +7262,12 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
                     const SizedBox(height: 12),
                     TextField(
                       controller: quantidade,
-                      keyboardType: TextInputType.number,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      inputFormatters: const [
+                        QuantidadeMaterialInputFormatter(),
+                      ],
                       decoration: const InputDecoration(
                         labelText: 'Quantidade',
                         border: OutlineInputBorder(),
@@ -6900,6 +7375,7 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
 
   Future<void> adicionarEquipamento() async {
     String equipamento = opcoesEquipamentos.first;
+    final descricaoOutros = TextEditingController();
     final codigoPlaca = TextEditingController();
     final horimetroKm = TextEditingController();
     final observacao = TextEditingController();
@@ -6930,6 +7406,17 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
                         setDialogState(() => equipamento = valor);
                       },
                     ),
+                    if (equipamento == 'OUTROS') ...[
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: descricaoOutros,
+                        decoration: const InputDecoration(
+                          labelText: 'Descreva o equipamento/veículo',
+                          hintText: 'Ex.: Caminhão comboio, van de apoio...',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 12),
                     TextField(
                       controller: codigoPlaca,
@@ -6965,8 +7452,22 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
                 ),
                 FilledButton(
                   onPressed: () {
+                    final descricao = descricaoOutros.text.trim();
+
+                    if (equipamento == 'OUTROS' && descricao.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Descreva o equipamento/veículo informado como OUTROS.',
+                          ),
+                        ),
+                      );
+                      return;
+                    }
+
                     Navigator.of(context).pop({
                       'equipamento': equipamento,
+                      'descricao_outros': descricao,
                       'codigo_placa': codigoPlaca.text.trim(),
                       'horimetro_quilometragem': horimetroKm.text.trim(),
                       'observacao': observacao.text.trim(),
@@ -6995,6 +7496,7 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
   }) async {
     String funcao = opcoes.first;
     final quantidade = TextEditingController();
+    final descricaoOutros = TextEditingController();
 
     final resultado = await showDialog<Map<String, dynamic>>(
       context: context,
@@ -7044,8 +7546,22 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
                 ),
                 FilledButton(
                   onPressed: () {
+                    final descricao = descricaoOutros.text.trim();
+
+                    if (funcao == 'OUTROS' && descricao.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Descreva a função informada como OUTROS.',
+                          ),
+                        ),
+                      );
+                      return;
+                    }
+
                     Navigator.of(context).pop({
                       'funcao': funcao,
+                      'descricao_outros': descricao,
                       'quantidade': quantidade.text.trim(),
                     });
                   },
@@ -7150,13 +7666,98 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
         return;
       }
 
+      final total = fotos.length;
+      final progresso = ValueNotifier<int>(0);
+
+      if (mounted) {
+        showDialog<void>(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) {
+            return PopScope(
+              canPop: false,
+              child: AlertDialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(22),
+                ),
+                title: const Text('Preparando fotos'),
+                content: ValueListenableBuilder<int>(
+                  valueListenable: progresso,
+                  builder: (context, valor, _) {
+                    final percentual = total == 0 ? 0.0 : valor / total;
+
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Aguarde enquanto as fotos são carregadas no rascunho.',
+                          style: TextStyle(
+                            color: Color(0xFF64748B),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        LinearProgressIndicator(value: percentual),
+                        const SizedBox(height: 12),
+                        Text(
+                          '$valor de $total foto(s) carregada(s)',
+                          style: const TextStyle(
+                            color: Color(0xFF0F172A),
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            );
+          },
+        );
+      }
+
+      await Future.delayed(const Duration(milliseconds: 120));
+
+      var carregadas = 0;
+
       for (final foto in fotos) {
         final salva = await salvarArquivoFoto(foto);
         fotosOffline.add(salva);
+
+        carregadas++;
+        progresso.value = carregadas;
+
+        // Dá um respiro para a UI atualizar a barra de progresso em lotes grandes.
+        if (carregadas % 5 == 0) {
+          await Future.delayed(const Duration(milliseconds: 1));
+        }
+      }
+
+      if (mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+
+      progresso.dispose();
+
+      if (!mounted) {
+        return;
       }
 
       setState(() {});
+
+      mostrarMensagem(
+        total == 1
+            ? '1 foto carregada no rascunho.'
+            : '$total fotos carregadas no rascunho.',
+      );
     } catch (_) {
+      if (mounted) {
+        try {
+          Navigator.of(context, rootNavigator: true).pop();
+        } catch (_) {}
+      }
+
       mostrarMensagem('Não foi possível selecionar as fotos.');
     }
   }
@@ -7180,6 +7781,451 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
         // Mesmo se não conseguir apagar o arquivo, remove do rascunho.
       }
     }
+  }
+
+  Future<void> removerTodasFotosOffline() async {
+    if (fotosOffline.isEmpty) {
+      return;
+    }
+
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Remover todas as fotos?'),
+          content: Text(
+            'Você está prestes a remover ${fotosOffline.length} foto(s) deste rascunho. Deseja continuar?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton.icon(
+              onPressed: () => Navigator.of(context).pop(true),
+              icon: const Icon(Icons.delete_outline),
+              label: const Text('Remover'),
+              style: FilledButton.styleFrom(
+                backgroundColor: Color(0xFFDC2626),
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmar != true) {
+      return;
+    }
+
+    final fotosParaExcluir = List<Map<String, dynamic>>.from(fotosOffline);
+
+    setState(() {
+      fotosOffline.clear();
+    });
+
+    for (final foto in fotosParaExcluir) {
+      final caminho = foto['path']?.toString() ?? '';
+
+      if (caminho.isEmpty) {
+        continue;
+      }
+
+      try {
+        final arquivo = File(caminho);
+
+        if (await arquivo.exists()) {
+          await arquivo.delete();
+        }
+      } catch (_) {
+        // Se não conseguir apagar o arquivo físico, mantém o rascunho limpo visualmente.
+      }
+    }
+  }
+
+  Widget miniFotoOffline(int index, Map<String, dynamic> foto) {
+    final caminho = foto['path']?.toString() ?? '';
+    final arquivo = File(caminho);
+
+    return Stack(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFE2E8F0),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: arquivo.existsSync()
+              ? Image.file(
+                  arquivo,
+                  width: double.infinity,
+                  height: double.infinity,
+                  fit: BoxFit.cover,
+                  cacheWidth: 320,
+                )
+              : const Center(
+                  child: Icon(
+                    Icons.broken_image_outlined,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+        ),
+        Positioned(
+          left: 6,
+          top: 6,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.58),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              '${index + 1}',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+                fontSize: 11,
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          right: 2,
+          top: 2,
+          child: IconButton.filled(
+            visualDensity: VisualDensity.compact,
+            iconSize: 17,
+            style: IconButton.styleFrom(
+              backgroundColor: const Color(0xFFDC2626),
+              foregroundColor: Colors.white,
+              minimumSize: const Size(30, 30),
+            ),
+            onPressed: () => removerFotoOffline(index),
+            icon: const Icon(Icons.close),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> abrirGaleriaFotosRascunho() async {
+    if (fotosOffline.isEmpty) {
+      mostrarMensagem('Nenhuma foto adicionada ao rascunho.');
+      return;
+    }
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFFF8FAFC),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return DraggableScrollableSheet(
+              expand: false,
+              initialChildSize: 0.88,
+              minChildSize: 0.55,
+              maxChildSize: 0.96,
+              builder: (context, scrollController) {
+                return Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(18, 12, 18, 10),
+                      child: Column(
+                        children: [
+                          Container(
+                            width: 46,
+                            height: 5,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFCBD5E1),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          Row(
+                            children: [
+                              Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEEF2FF),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: const Icon(
+                                  Icons.photo_library_outlined,
+                                  color: Color(0xFF1D4ED8),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Galeria do rascunho',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w900,
+                                        color: Color(0xFF0F172A),
+                                      ),
+                                    ),
+                                    Text(
+                                      '${fotosOffline.length} foto(s) selecionada(s)',
+                                      style: const TextStyle(
+                                        color: Color(0xFF64748B),
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: () => Navigator.of(context).pop(),
+                                icon: const Icon(Icons.close),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: fotosOffline.isEmpty
+                          ? const Center(
+                              child: Text(
+                                'Nenhuma foto adicionada.',
+                                style: TextStyle(
+                                  color: Color(0xFF64748B),
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            )
+                          : GridView.builder(
+                              controller: scrollController,
+                              padding: const EdgeInsets.fromLTRB(18, 8, 18, 18),
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 3,
+                                    crossAxisSpacing: 8,
+                                    mainAxisSpacing: 8,
+                                    childAspectRatio: 0.82,
+                                  ),
+                              itemCount: fotosOffline.length,
+                              itemBuilder: (context, index) {
+                                return miniFotoOffline(
+                                  index,
+                                  fotosOffline[index],
+                                );
+                              },
+                            ),
+                    ),
+                    SafeArea(
+                      top: false,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(18, 8, 18, 16),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: () async {
+                                  Navigator.of(context).pop();
+                                  await adicionarFotosGaleria();
+                                },
+                                icon: const Icon(
+                                  Icons.add_photo_alternate_outlined,
+                                ),
+                                label: const Text('Adicionar'),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: fotosOffline.isEmpty
+                                    ? null
+                                    : () async {
+                                        Navigator.of(context).pop();
+                                        await removerTodasFotosOffline();
+                                      },
+                                icon: const Icon(Icons.delete_outline),
+                                label: const Text('Limpar'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: const Color(0xFFDC2626),
+                                  side: const BorderSide(
+                                    color: Color(0xFFDC2626),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  Widget painelFotosOffline() {
+    final total = fotosOffline.length;
+    final previa = fotosOffline.take(9).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFEFF6FF),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFBFDBFE)),
+          ),
+          child: const Text(
+            'As fotos ficam salvas no aparelho junto com o diário pendente. No envio, o app manda em lotes para evitar falhas com muitas imagens.',
+            style: TextStyle(
+              color: Color(0xFF1E3A8A),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        Row(
+          children: [
+            Expanded(
+              child: FilledButton.icon(
+                onPressed: adicionarFotoCamera,
+                icon: const Icon(Icons.camera_alt_outlined),
+                label: const Text('Câmera'),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: adicionarFotosGaleria,
+                icon: const Icon(Icons.photo_library_outlined),
+                label: const Text('Galeria'),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (total == 0)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: const Text(
+              'Nenhuma foto adicionada ao rascunho.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Color(0xFF64748B),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          )
+        else ...[
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF5F3FF),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Icon(
+                    Icons.collections_outlined,
+                    color: Color(0xFF7C3AED),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    total == 1
+                        ? '1 foto selecionada'
+                        : '$total fotos selecionadas',
+                    style: const TextStyle(
+                      color: Color(0xFF0F172A),
+                      fontWeight: FontWeight.w900,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: abrirGaleriaFotosRascunho,
+                  icon: const Icon(Icons.grid_view_outlined),
+                  label: const Text('Ver'),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          GridView.builder(
+            itemCount: previa.length,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+              childAspectRatio: 0.82,
+            ),
+            itemBuilder: (context, index) {
+              return miniFotoOffline(index, previa[index]);
+            },
+          ),
+          if (total > previa.length) ...[
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: abrirGaleriaFotosRascunho,
+                icon: const Icon(Icons.photo_library_outlined),
+                label: Text('Ver todas as $total fotos'),
+              ),
+            ),
+          ],
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: removerTodasFotosOffline,
+              icon: const Icon(Icons.delete_outline),
+              label: const Text('Limpar fotos selecionadas'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFFDC2626),
+                side: const BorderSide(color: Color(0xFFDC2626)),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
   }
 
   int totalItensPreenchidos() {
@@ -7988,67 +9034,7 @@ class _NovoDiarioOfflinePageState extends State<NovoDiarioOfflinePage> {
             secaoFormulario(
               titulo: 'Fotos do diário',
               icon: Icons.photo_library_outlined,
-              children: [
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(14),
-                  margin: const EdgeInsets.only(bottom: 12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEFF6FF),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFBFDBFE)),
-                  ),
-                  child: const Text(
-                    'As fotos ficam salvas junto com o diário pendente e serão enviadas automaticamente quando houver conexão.',
-                    style: TextStyle(
-                      color: Color(0xFF1E3A8A),
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: adicionarFotoCamera,
-                        icon: const Icon(Icons.camera_alt_outlined),
-                        label: const Text('Câmera'),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: adicionarFotosGaleria,
-                        icon: const Icon(Icons.photo_library_outlined),
-                        label: const Text('Galeria'),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                if (fotosOffline.isEmpty)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                    ),
-                    child: const Text(
-                      'Nenhuma foto adicionada ao rascunho.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Color(0xFF64748B),
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  )
-                else
-                  ...fotosOffline.asMap().entries.map(
-                    (entry) => cardFotoOffline(entry.key, entry.value),
-                  ),
-              ],
+              children: [painelFotosOffline()],
             ),
             secaoFormulario(
               titulo: 'Ocorrências e segurança',
@@ -8153,6 +9139,7 @@ class _PendentesOfflinePageState extends State<PendentesOfflinePage> {
   bool enviandoTodos = false;
   final Set<int> enviandoIds = {};
   final Map<int, String> statusEnvio = {};
+  VoidCallback? progressoEnvioListener;
   List<RascunhosDiario> rascunhos = [];
 
   static const Color fundo = Color(0xFFF4F7FB);
@@ -8165,7 +9152,41 @@ class _PendentesOfflinePageState extends State<PendentesOfflinePage> {
   @override
   void initState() {
     super.initState();
+
+    progressoEnvioListener = sincronizarEstadoEnvioGlobal;
+    AuthService.progressoEnvioPendentes.addListener(progressoEnvioListener!);
+
+    sincronizarEstadoEnvioGlobal();
     carregarPendentes();
+  }
+
+  @override
+  void dispose() {
+    final listener = progressoEnvioListener;
+
+    if (listener != null) {
+      AuthService.progressoEnvioPendentes.removeListener(listener);
+    }
+
+    super.dispose();
+  }
+
+  void sincronizarEstadoEnvioGlobal() {
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      statusEnvio
+        ..clear()
+        ..addAll(AuthService.progressoEnvioPendentes.value);
+
+      enviandoIds
+        ..clear()
+        ..addAll(AuthService.idsEnvioPendentes);
+
+      enviandoTodos = AuthService.existeEnvioPendenteAtivo;
+    });
   }
 
   Future<void> carregarPendentes() async {
@@ -8182,6 +9203,16 @@ class _PendentesOfflinePageState extends State<PendentesOfflinePage> {
     setState(() {
       rascunhos = lista;
       carregando = false;
+
+      statusEnvio
+        ..clear()
+        ..addAll(AuthService.progressoEnvioPendentes.value);
+
+      enviandoIds
+        ..clear()
+        ..addAll(AuthService.idsEnvioPendentes);
+
+      enviandoTodos = AuthService.existeEnvioPendenteAtivo;
     });
   }
 
@@ -8219,8 +9250,8 @@ class _PendentesOfflinePageState extends State<PendentesOfflinePage> {
 
   Future<bool> enviarPendenteSilencioso(RascunhosDiario item) async {
     try {
-      await authService.enviarRascunhoDiario(item);
-      return true;
+      final iniciou = await authService.enviarRascunhoComControleGlobal(item);
+      return iniciou;
     } catch (_) {
       return false;
     }
@@ -8313,7 +9344,7 @@ class _PendentesOfflinePageState extends State<PendentesOfflinePage> {
     });
 
     try {
-      await authService.enviarRascunhoDiario(item);
+      await authService.enviarRascunhoComControleGlobal(item);
 
       if (mounted) {
         setState(() {
@@ -8786,8 +9817,8 @@ class _PendentesOfflinePageState extends State<PendentesOfflinePage> {
           const SizedBox(height: 8),
           Text(
             enviandoTodos
-                ? 'Enviando os lançamentos salvos no dispositivo...'
-                : 'Quando houver conexão com a API, os diários serão enviados ao sistema.',
+                ? 'Enviando diários e fotos em lotes. Não feche o app até concluir...'
+                : 'Quando houver conexão, os diários serão enviados automaticamente.',
             style: const TextStyle(
               color: Color(0xFFFFF7ED),
               height: 1.35,
@@ -8811,7 +9842,7 @@ class _PendentesOfflinePageState extends State<PendentesOfflinePage> {
           enviandoTodos ? Icons.hourglass_empty : Icons.cloud_upload_outlined,
         ),
         label: Text(
-          enviandoTodos ? 'Enviando pendentes...' : 'Enviar todos pendentes',
+          enviandoTodos ? 'Enviando... aguarde' : 'Enviar todos pendentes',
         ),
         style: FilledButton.styleFrom(
           backgroundColor: azulEscuro,
@@ -8880,16 +9911,16 @@ class AppErrorHandler {
     }
 
     if (statusCode == 404) {
-      return 'A API foi encontrada, mas a rota de login não existe. Verifique a versão do servidor.';
+      return 'Não foi possível validar o acesso. Atualize o app ou tente novamente.';
     }
 
     if (statusCode != null && statusCode >= 500) {
-      return 'O servidor respondeu com erro. Tente novamente em alguns instantes.';
+      return 'O sistema apresentou instabilidade. Tente novamente em alguns instantes.';
     }
 
     return _mensagemConexao(
       erro,
-      contexto: 'Não foi possível conectar à API para fazer login.',
+      contexto: 'Não foi possível conectar ao sistema para fazer login.',
     );
   }
 
@@ -8910,11 +9941,11 @@ class AppErrorHandler {
     }
 
     if (statusCode == 404) {
-      return 'A rota de sincronização não foi encontrada na API. Verifique se o servidor está atualizado.';
+      return 'Não foi possível atualizar os dados. Atualize o app ou tente novamente.';
     }
 
     if (statusCode != null && statusCode >= 500) {
-      return 'O servidor está com instabilidade. Tente sincronizar novamente em alguns instantes.';
+      return 'O sistema está com instabilidade. Tente atualizar novamente em alguns instantes.';
     }
 
     return _mensagemConexao(
@@ -8924,7 +9955,7 @@ class AppErrorHandler {
   }
 
   static String mensagemModoOffline(DioException erro) {
-    final base = _mensagemConexao(erro, contexto: 'Sem conexão com a API.');
+    final base = _mensagemConexao(erro, contexto: 'Sem conexão no momento.');
 
     return '$base Usando os dados já salvos no dispositivo.';
   }
@@ -8935,19 +9966,19 @@ class AppErrorHandler {
   }) {
     switch (erro.type) {
       case DioExceptionType.connectionTimeout:
-        return '$contexto A conexão demorou demais. Verifique a VPN, sinal de internet ou se o servidor está acessível.';
+        return '$contexto A conexão demorou demais. Verifique a VPN, sinal de internet e tente novamente.';
       case DioExceptionType.sendTimeout:
         return '$contexto O envio demorou demais. Tente novamente.';
       case DioExceptionType.receiveTimeout:
-        return '$contexto O servidor demorou para responder. Tente novamente.';
+        return '$contexto A atualização demorou para responder. Tente novamente.';
       case DioExceptionType.connectionError:
-        return '$contexto Verifique se o celular está com internet, se a VPN está conectada e se a API está acessível.';
+        return '$contexto Verifique se o celular está com internet, se a VPN está conectada e tente novamente.';
       case DioExceptionType.badCertificate:
-        return '$contexto Há um problema no certificado de segurança do servidor.';
+        return '$contexto Há um problema na conexão segura.';
       case DioExceptionType.cancel:
         return 'A operação foi cancelada.';
       case DioExceptionType.badResponse:
-        return '$contexto O servidor respondeu de forma inesperada.';
+        return '$contexto O sistema respondeu de forma inesperada.';
       case DioExceptionType.unknown:
         final mensagem = erro.message?.toLowerCase() ?? '';
 
@@ -8955,7 +9986,7 @@ class AppErrorHandler {
             mensagem.contains('socket') ||
             mensagem.contains('network') ||
             mensagem.contains('connection refused')) {
-          return '$contexto Verifique sua internet, VPN e endereço da API.';
+          return '$contexto Verifique sua internet, VPN e tente novamente.';
         }
 
         return '$contexto Erro de conexão não identificado.';
@@ -9090,7 +10121,7 @@ class _DiagnosticoPageState extends State<DiagnosticoPage> {
       }
 
       setState(() {
-        resultadoApi = 'Falhou ao testar';
+        resultadoApi = 'Falhou ao verificar';
         ultimoErro = e.toString();
       });
     } finally {
@@ -9107,15 +10138,14 @@ class _DiagnosticoPageState extends State<DiagnosticoPage> {
       'DIAGNÓSTICO DO APP',
       'Usuário: ${widget.nomeUsuario}',
       'Obra: ${widget.nomeObra}',
-      'API: ${widget.apiBaseUrl}',
       'Token: $tokenStatus',
       'Última sincronização: ${widget.ultimaSincronizacao}',
-      'Status atual: ${widget.usandoDadosLocais ? 'offline/local' : 'online/sincronizado'}',
+      'Status atual: ${widget.usandoDadosLocais ? 'dados salvos no aparelho' : 'dados atualizados'}',
       'Diários offline: ${widget.totalDiariosOffline}',
       'Fotos encontradas nos diários: ${widget.fotosSincronizadas}',
       'Fotos offline: $fotosOffline',
       'Tamanho cache fotos: ${formatarTamanho(tamanhoCacheBytes)}',
-      'Teste API: $resultadoApi',
+      'Verificação de conexão: $resultadoApi',
       'Último erro: $ultimoErro',
     ].join('\\n');
   }
@@ -9210,8 +10240,8 @@ class _DiagnosticoPageState extends State<DiagnosticoPage> {
   @override
   Widget build(BuildContext context) {
     final statusAtual = widget.usandoDadosLocais
-        ? 'Usando dados locais/offline'
-        : 'Online/sincronizado';
+        ? 'Usando dados salvos no aparelho'
+        : 'Dados atualizados';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -9296,7 +10326,7 @@ class _DiagnosticoPageState extends State<DiagnosticoPage> {
                     ? const Color(0xFF10B981)
                     : const Color(0xFFF97316),
               ),
-              sectionTitle('Sincronização e offline'),
+              sectionTitle('Atualização e dados offline'),
               statusCard(
                 icon: Icons.sync,
                 titulo: 'Última sincronização',
@@ -9329,16 +10359,9 @@ class _DiagnosticoPageState extends State<DiagnosticoPage> {
                     '$fotosOffline foto(s) • ${formatarTamanho(tamanhoCacheBytes)}',
                 color: const Color(0xFF7C3AED),
               ),
-              sectionTitle('API'),
-              statusCard(
-                icon: Icons.api_outlined,
-                titulo: 'Base URL',
-                valor: widget.apiBaseUrl,
-                color: const Color(0xFF475569),
-              ),
               statusCard(
                 icon: Icons.cable_outlined,
-                titulo: 'Resultado do teste',
+                titulo: 'Resultado da verificação',
                 valor: resultadoApi,
                 color: resultadoApi.contains('sucesso')
                     ? const Color(0xFF10B981)
@@ -9363,9 +10386,7 @@ class _DiagnosticoPageState extends State<DiagnosticoPage> {
                       : Icons.wifi_find_outlined,
                 ),
                 label: Text(
-                  testandoApi
-                      ? 'Testando conexão...'
-                      : 'Testar conexão com API',
+                  testandoApi ? 'Testando conexão...' : 'Verificar conexão',
                 ),
               ),
             ),
@@ -9785,7 +10806,7 @@ class _SincronizacaoPageState extends State<SincronizacaoPage> {
                 label: Text(
                   sincronizando
                       ? 'Sincronizando...'
-                      : 'Sincronizar últimos $limiteSelecionado',
+                      : 'Atualizar últimos $limiteSelecionado',
                 ),
               ),
             ),
@@ -10346,7 +11367,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
               SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Quantidade de diários para sincronizar',
+                  'Quantidade de diários para atualizar',
                   style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
                 ),
               ),
@@ -10354,14 +11375,14 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
           ),
           const SizedBox(height: 8),
           const Text(
-            'Escolha quantos diários recentes o app deve buscar e manter disponíveis offline.',
+            'Escolha quantos diários recentes o app deve manter disponíveis para consulta offline.',
             style: TextStyle(color: Color(0xFF64748B), height: 1.3),
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<int>(
             value: limiteSelecionado,
             decoration: InputDecoration(
-              labelText: 'Limite de sincronização',
+              labelText: 'Quantidade de diários',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
@@ -10573,7 +11594,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
               ),
               infoCard(
                 icon: Icons.collections_outlined,
-                titulo: 'Fotos encontradas nos diários sincronizados',
+                titulo: 'Fotos encontradas nos diários',
                 valor: '${widget.urlsFotosSincronizadas.length}',
                 color: const Color(0xFF2563EB),
               ),
@@ -10585,18 +11606,12 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                     ? const Color(0xFFF59E0B)
                     : const Color(0xFF10B981),
               ),
-              infoCard(
-                icon: Icons.api_outlined,
-                titulo: 'API configurada',
-                valor: widget.apiBaseUrl,
-                color: const Color(0xFF475569),
-              ),
               limiteSincronizacaoCard(),
             ],
             const SizedBox(height: 6),
             actionButton(
               icon: Icons.cloud_sync_outlined,
-              label: 'Abrir tela de sincronização',
+              label: 'Abrir atualização de dados',
               onPressed: abrirTelaSincronizacao,
               outlined: true,
             ),
@@ -10612,7 +11627,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
               icon: sincronizando ? Icons.hourglass_empty : Icons.sync,
               label: sincronizando
                   ? 'Sincronizando...'
-                  : 'Sincronizar últimos $limiteSelecionado',
+                  : 'Atualizar últimos $limiteSelecionado',
               onPressed: sincronizando ? null : sincronizarAgora,
             ),
             const SizedBox(height: 10),
@@ -10793,6 +11808,8 @@ class FotoCacheImage extends StatefulWidget {
   final Color backgroundColor;
   final Color loadingColor;
   final bool errorDarkMode;
+  final int? cacheWidth;
+  final int? cacheHeight;
 
   const FotoCacheImage({
     super.key,
@@ -10804,6 +11821,8 @@ class FotoCacheImage extends StatefulWidget {
     this.backgroundColor = const Color(0xFFE2E8F0),
     this.loadingColor = const Color(0xFF1D4ED8),
     this.errorDarkMode = false,
+    this.cacheWidth,
+    this.cacheHeight,
   });
 
   @override
@@ -10897,6 +11916,9 @@ class _FotoCacheImageState extends State<FotoCacheImage> {
           height: widget.height,
           width: widget.width,
           fit: widget.fit,
+          cacheWidth: widget.cacheWidth,
+          cacheHeight: widget.cacheHeight,
+          filterQuality: FilterQuality.low,
         );
 
         if (widget.borderRadius == null) {

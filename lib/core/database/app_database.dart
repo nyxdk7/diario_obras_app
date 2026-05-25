@@ -76,12 +76,7 @@ class RascunhosDiarios extends Table {
 }
 
 @DriftDatabase(
-  tables: [
-    LocalObras,
-    LocalDiarios,
-    SyncMetadados,
-    RascunhosDiarios,
-  ],
+  tables: [LocalObras, LocalDiarios, SyncMetadados, RascunhosDiarios],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_abrirConexao());
@@ -106,10 +101,7 @@ class AppDatabase extends _$AppDatabase {
           final migrator = m;
 
           try {
-            await migrator.addColumn(
-              rascunhosDiarios,
-              rascunhosDiarios.obraId,
-            );
+            await migrator.addColumn(rascunhosDiarios, rascunhosDiarios.obraId);
           } catch (_) {
             // Coluna já existe em algum ambiente de teste.
           }
@@ -168,24 +160,21 @@ class AppDatabase extends _$AppDatabase {
       agora.toIso8601String(),
     );
 
-    await _salvarMetadado(
-      'total_obras_local',
-      totalLocal.toString(),
-    );
+    await _salvarMetadado('total_obras_local', totalLocal.toString());
   }
 
   Future<List<LocalObra>> listarObrasLocais() {
-    return (select(localObras)
-          ..orderBy([
-            (t) => OrderingTerm.asc(t.nome),
-            (t) => OrderingTerm.asc(t.id),
-          ]))
+    return (select(localObras)..orderBy([
+          (t) => OrderingTerm.asc(t.nome),
+          (t) => OrderingTerm.asc(t.id),
+        ]))
         .get();
   }
 
   Future<LocalObra?> buscarObraLocalPorId(int id) {
-    return (select(localObras)..where((t) => t.id.equals(id)))
-        .getSingleOrNull();
+    return (select(
+      localObras,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
   }
 
   Future<int> contarObrasSalvas() async {
@@ -194,6 +183,46 @@ class AppDatabase extends _$AppDatabase {
     final row = await query.getSingle();
 
     return row.read(countExpression) ?? 0;
+  }
+
+  Future<void> limparDadosLocaisUsuario() async {
+    await transaction(() async {
+      await customStatement('DELETE FROM local_diarios');
+      await customStatement('DELETE FROM local_obras');
+      await customStatement('DELETE FROM sync_metadados');
+      await customStatement('DELETE FROM rascunhos_diarios');
+    });
+  }
+
+  Future<void> sincronizarObrasPermitidas(
+    List<Map<String, dynamic>> obras,
+  ) async {
+    final idsPermitidos = obras
+        .map((obra) => _intOuNull(obra['id']))
+        .whereType<int>()
+        .toList();
+
+    await transaction(() async {
+      if (idsPermitidos.isEmpty) {
+        await customStatement('DELETE FROM local_obras');
+        await customStatement('DELETE FROM local_diarios');
+        return;
+      }
+
+      final placeholders = List.filled(idsPermitidos.length, '?').join(',');
+
+      await customStatement(
+        'DELETE FROM local_obras WHERE id NOT IN ($placeholders)',
+        idsPermitidos,
+      );
+
+      await customStatement(
+        'DELETE FROM local_diarios WHERE obra_id IS NULL OR obra_id NOT IN ($placeholders)',
+        idsPermitidos,
+      );
+    });
+
+    await salvarObras(obras);
   }
 
   Future<void> salvarDiarios(List<Map<String, dynamic>> diarios) {
@@ -207,10 +236,7 @@ class AppDatabase extends _$AppDatabase {
     final agora = DateTime.now();
 
     if (diarios.isEmpty) {
-      await _salvarMetadado(
-        'ultima_sincronizacao',
-        agora.toIso8601String(),
-      );
+      await _salvarMetadado('ultima_sincronizacao', agora.toIso8601String());
 
       if (limiteSolicitado != null) {
         await _salvarMetadado(
@@ -247,20 +273,11 @@ class AppDatabase extends _$AppDatabase {
 
     final totalLocal = await contarDiariosSalvos();
 
-    await _salvarMetadado(
-      'ultima_sincronizacao',
-      agora.toIso8601String(),
-    );
+    await _salvarMetadado('ultima_sincronizacao', agora.toIso8601String());
 
-    await _salvarMetadado(
-      'ultimos_recebidos_api',
-      diarios.length.toString(),
-    );
+    await _salvarMetadado('ultimos_recebidos_api', diarios.length.toString());
 
-    await _salvarMetadado(
-      'total_diarios_local',
-      totalLocal.toString(),
-    );
+    await _salvarMetadado('total_diarios_local', totalLocal.toString());
 
     if (limiteSolicitado != null) {
       await _salvarMetadado(
@@ -294,9 +311,9 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<String?> buscarUltimaSincronizacao() async {
-    final item = await (select(syncMetadados)
-          ..where((t) => t.chave.equals('ultima_sincronizacao')))
-        .getSingleOrNull();
+    final item = await (select(
+      syncMetadados,
+    )..where((t) => t.chave.equals('ultima_sincronizacao'))).getSingleOrNull();
 
     return item?.valor;
   }
@@ -304,9 +321,7 @@ class AppDatabase extends _$AppDatabase {
   Future<Map<String, String?>> buscarResumoSincronizacao() async {
     final itens = await select(syncMetadados).get();
 
-    return {
-      for (final item in itens) item.chave: item.valor,
-    };
+    return {for (final item in itens) item.chave: item.valor};
   }
 
   Future<int> salvarRascunhoDiario(Map<String, dynamic> dados) async {
@@ -325,9 +340,9 @@ class AppDatabase extends _$AppDatabase {
     int id,
     Map<String, dynamic> dados,
   ) async {
-    final existente = await (select(rascunhosDiarios)
-          ..where((t) => t.id.equals(id)))
-        .getSingleOrNull();
+    final existente = await (select(
+      rascunhosDiarios,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
 
     if (existente == null) {
       throw Exception('Rascunho não encontrado.');
@@ -339,13 +354,11 @@ class AppDatabase extends _$AppDatabase {
       dados,
       criadoEm: existente.criadoEm,
       atualizadoEm: agora,
-    ).copyWith(
-      id: Value(id),
-    );
+    ).copyWith(id: Value(id));
 
-    await (update(rascunhosDiarios)..where((t) => t.id.equals(id))).write(
-      companion,
-    );
+    await (update(
+      rascunhosDiarios,
+    )..where((t) => t.id.equals(id))).write(companion);
   }
 
   RascunhosDiariosCompanion _rascunhoCompanion(
@@ -355,7 +368,8 @@ class AppDatabase extends _$AppDatabase {
   }) {
     final obraId = _intOuNull(dados['obra_id']);
 
-    final obraNome = _textoOuNull(dados['obra_nome']) ??
+    final obraNome =
+        _textoOuNull(dados['obra_nome']) ??
         _textoOuNull(dados['nome_obra']) ??
         _textoOuNull(dados['obra']);
 
@@ -386,11 +400,10 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<List<RascunhosDiario>> listarRascunhosDiarios() {
-    return (select(rascunhosDiarios)
-          ..orderBy([
-            (t) => OrderingTerm.desc(t.atualizadoEm),
-            (t) => OrderingTerm.desc(t.id),
-          ]))
+    return (select(rascunhosDiarios)..orderBy([
+          (t) => OrderingTerm.desc(t.atualizadoEm),
+          (t) => OrderingTerm.desc(t.id),
+        ]))
         .get();
   }
 
@@ -408,10 +421,7 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> _salvarMetadado(String chave, String? valor) async {
     await into(syncMetadados).insertOnConflictUpdate(
-      SyncMetadadosCompanion.insert(
-        chave: chave,
-        valor: Value(valor),
-      ),
+      SyncMetadadosCompanion.insert(chave: chave, valor: Value(valor)),
     );
   }
 
@@ -455,9 +465,7 @@ class AppDatabase extends _$AppDatabase {
       final primeiro = servicos.first;
 
       if (primeiro is Map) {
-        return _textoOuNull(
-          primeiro['tipo_servico'] ?? primeiro['tipo'],
-        );
+        return _textoOuNull(primeiro['tipo_servico'] ?? primeiro['tipo']);
       }
     }
 

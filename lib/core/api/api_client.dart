@@ -1,21 +1,20 @@
 import 'package:dio/dio.dart';
 
 class ApiClient {
-  static const String baseUrl = 'http://192.168.9.2';
+  static const String baseUrl = 'https://diario.msmind.com.br';
 
   final Dio dio;
 
   ApiClient()
-      : dio = Dio(
-          BaseOptions(
-            baseUrl: baseUrl,
-            connectTimeout: const Duration(seconds: 15),
-            receiveTimeout: const Duration(seconds: 30),
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          ),
-        );
+    : dio = Dio(
+        BaseOptions(
+          baseUrl: baseUrl,
+          connectTimeout: const Duration(seconds: 20),
+          sendTimeout: const Duration(minutes: 3),
+          receiveTimeout: const Duration(minutes: 3),
+          headers: {'Content-Type': 'application/json'},
+        ),
+      );
 
   Future<Response> login({
     required String username,
@@ -35,25 +34,15 @@ class ApiClient {
   Future<Response> me(String token) {
     return dio.get(
       '/api/mobile/me',
-      options: Options(
-        headers: {
-          'Authorization': 'Bearer $token',
-        },
-      ),
+      options: Options(headers: {'Authorization': 'Bearer $token'}),
     );
   }
 
   Future<Response> sync(String token, {int limite = 300}) {
     return dio.get(
       '/api/mobile/sync',
-      queryParameters: {
-        'limite': limite,
-      },
-      options: Options(
-        headers: {
-          'Authorization': 'Bearer $token',
-        },
-      ),
+      queryParameters: {'limite': limite},
+      options: Options(headers: {'Authorization': 'Bearer $token'}),
     );
   }
 
@@ -73,6 +62,23 @@ class ApiClient {
     );
   }
 
+  Future<Response> reenviarDiarioDevolvidoMobile(
+    String token,
+    int diarioId,
+    Map<String, dynamic> payload,
+  ) {
+    return dio.post(
+      '/api/mobile/diarios/$diarioId/reenviar-devolvido',
+      data: payload,
+      options: Options(
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      ),
+    );
+  }
+
   Future<Response> enviarFotosDiarioMobile(
     String token,
     int diarioId,
@@ -81,15 +87,12 @@ class ApiClient {
     final formData = FormData();
 
     for (final caminho in caminhosFotos) {
-      final nome = caminho.split(RegExp(r'[\\/]')).last;
+      final nome = caminho.split(RegExp(r'[\/]')).last;
 
       formData.files.add(
         MapEntry(
           'fotos',
-          await MultipartFile.fromFile(
-            caminho,
-            filename: nome,
-          ),
+          await MultipartFile.fromFile(caminho, filename: nome),
         ),
       );
     }
@@ -98,6 +101,8 @@ class ApiClient {
       '/api/mobile/diarios/$diarioId/fotos',
       data: formData,
       options: Options(
+        sendTimeout: const Duration(minutes: 3),
+        receiveTimeout: const Duration(minutes: 3),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'multipart/form-data',
@@ -133,11 +138,7 @@ class ApiClient {
   }) {
     return dio.post(
       '/api/mobile/diarios/$diarioId/devolver',
-      data: {
-        'motivo': motivo.trim().isEmpty
-            ? 'Registro devolvido para correção.'
-            : motivo.trim(),
-      },
+      data: {'motivo': motivo.trim()},
       options: Options(
         headers: {
           'Authorization': 'Bearer $token',
@@ -147,24 +148,13 @@ class ApiClient {
     );
   }
 
-
-  Future<Response> pendenciasMobile(
-    String token, {
-    int limite = 100,
-  }) {
+  Future<Response> pendenciasMobile(String token, {int limite = 100}) {
     return dio.get(
       '/api/mobile/pendencias',
-      queryParameters: {
-        'limite': limite,
-      },
-      options: Options(
-        headers: {
-          'Authorization': 'Bearer $token',
-        },
-      ),
+      queryParameters: {'limite': limite},
+      options: Options(headers: {'Authorization': 'Bearer $token'}),
     );
   }
-
 
   Future<Response> aprovarEdicaoDiarioMobile(
     String token,
@@ -207,11 +197,7 @@ class ApiClient {
     );
   }
 
-
-  Future<Response> aprovarExclusaoDiarioMobile(
-    String token,
-    int diarioId,
-  ) {
+  Future<Response> aprovarExclusaoDiarioMobile(String token, int diarioId) {
     return dio.post(
       '/api/mobile/diarios/$diarioId/exclusao/aprovar',
       data: {},
@@ -245,7 +231,6 @@ class ApiClient {
     );
   }
 
-
   Future<Response> solicitarEdicaoDiarioMobile(
     String token,
     int diarioId, {
@@ -253,9 +238,7 @@ class ApiClient {
   }) {
     return dio.post(
       '/api/mobile/diarios/$diarioId/solicitar-edicao',
-      data: {
-        'motivo': motivo.trim(),
-      },
+      data: {'motivo': motivo.trim()},
       options: Options(
         headers: {
           'Authorization': 'Bearer $token',
@@ -272,9 +255,7 @@ class ApiClient {
   }) {
     return dio.post(
       '/api/mobile/diarios/$diarioId/solicitar-exclusao',
-      data: {
-        'motivo': motivo.trim(),
-      },
+      data: {'motivo': motivo.trim()},
       options: Options(
         headers: {
           'Authorization': 'Bearer $token',
@@ -283,5 +264,4 @@ class ApiClient {
       ),
     );
   }
-
 }
